@@ -1,0 +1,127 @@
+%packages added
+\usepackage{ctex}
+\usepackage{etex}
+
+\usepackage[oldcommands,ruled,vlined,linesnumbered]{algorithm2e}
+
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath,amssymb,boxedminipage}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{grffile}
+\usepackage{xspace}
+\usepackage{tikz}
+\usepackage{inconsolata}
+
+
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{matrix,shapes,arrows,positioning,chains,patterns,trees,decorations.pathmorphing}
+
+\usepackage{textcomp}
+\usepackage{colortbl}
+
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\allowdisplaybreaks
+
+%newcommand
+\newcommand{\la}{\leftarrow}
+\newcommand{\m}{\mathnormal{-}}
+
+\providecommand{\abs}[1]{\lvert#1\rvert}
+\providecommand{\citestr}[1]{{\fontsize{8}{9}\selectfont \structure{[#1]}}}
+\providecommand{\smallcitestr}[1]{\small{\structure{[#1]}}}
+\providecommand{\norm}[1]{\lVert#1\rVert}
+\providecommand{\ip}[1]{\langle#1\rangle}
+\providecommand{\myref}[1]{\textcolor{blue}{#1}}
+\providecommand{\myemph}[1]{\textcolor{blue}{#1}}
+
+% box for pseudo code
+\newsavebox{\codebox}
+\newenvironment{code}
+{\fboxsep6pt\begin{lrbox}{\codebox}%
+\begin{minipage}{\dimexpr\columnwidth-2\fboxsep\relax}\ttfamily}
+{\end{minipage}\end{lrbox}%
+\begin{center}\colorbox{ADLightGrey}{\usebox{\codebox}}\end{center}}
+
+% keywords for pseudo code (extend here if needed)
+% \newcommand{\WHILE}{\hl{while}\xspace}
+% \newcommand{\FOREACH}{\hl{foreach}\xspace}
+% \newcommand{\FOR}{\hl{for}\xspace}
+% \newcommand{\RETURN}{\hl{return}\xspace}
+% \newcommand{\IF}{\hl{if}\xspace}
+% \newcommand{\ELSEIF}{\hl{elseif}\xspace}
+% \newcommand{\ELSE}{\hl{else}\xspace}
+
+% Replacement for notes with small arrows 
+\newcommand{\bigoh}{\mathcal{O}}
+\newcommand{\noteA}[1]{{\fboxsep1pt\colorbox{yellow!20!white}{#1}}}
+\newcommand{\noteB}[1]{{\fboxsep1pt\colorbox{green!20!white}{#1}}}
+\newcommand{\noteC}[1]{{\fboxsep1pt\colorbox{red!20!white}{#1}}}
+\newcommand{\boxA}{\fboxsep0pt\colorbox{yellow!20!white}{$\Box$}\xspace}
+\newcommand{\boxB}{\fboxsep0pt\colorbox{green!20!white}{$\Box$}\xspace}
+\newcommand{\boxC}{\fboxsep0pt\colorbox{red!20!white}{$\Box$}\xspace}
+
+\newenvironment{notes}{\begin{quote}\small}{\end{quote}}
+
+% Some convenience macros
+\newcommand{\hl}[1]{\textcolor{ADBlue}{#1}}
+\newcommand{\lit}[1]{\textcolor{ADGrey}{[#1]}}
+
+
+\newcommand{\SECTION}[1]{
+  \begin{center}
+    \Large\hl{#1}    
+  \end{center}}
+\newcommand{\pnote}[1]{\textcolor{blue}{(Pan: #1)}}  
+\newcommand{\NP}{$\mathbf{NP}$}
+\renewcommand{\P}{$\mathbf{P}$}
+
+\newcommand{\problem}{\textbf{问题:}}
+\newcommand{\idea}{\textbf{思路:}}
+
+\renewcommand{\algorithmcfname}{算法}
+\newcommand{\whp}{w.h.p.}
+\newcommand{\wpgeq}[1]{w.p.$\geq #1$}
+\newcommand{\wpleq}[1]{w.p.$\leq #1$}
+\newcommand{\var}{\mathrm{Var}}
+
+\newcommand{\sumn}[1]{\sum_{#1=1}^{n}}
+\newcommand{\sumx}[2]{\sum_{#1=1}^{#2}}
+\newcommand{\prodn}[1]{\prod_{#1=1}^{n}}
+\newcommand{\prodx}[2]{\prod_{#1=1}^{#2}}
+\newcommand{\intx}[2]{\int_{#1}^{#2}}
+\newcommand{\varset}[1]{#1_1,\dots,#1_n}
+\newcommand{\ton}{1,\dots,n}
+\newcommand{\tox}[1]{1,\dots,#1}
+\newcommand{\fvarset}[2]{#1(#2_1),\dots,#1(#2_n)}
+\newcommand{\rspace}[1]{\mathbb{R}^{#1}}
+\newcommand{\vecspace}[2]{\mathbb{#1}^{#2}}
+\newcommand{\set}[1]{\lbrace {#1}\rbrace}
+
+
+\newcommand{\xhy}[1]{\textcolor{orange}{#1}}
+\newcommand{\xy}[1]{\textcolor{blue}{#1}}
+\newcommand{\supplement}{\textbf{补充:}}
+
+\newcommand{\bool}{\{0,1\}}
+\newcommand{\Ham}{\mathrm{Ham}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\err}{\mathrm{err}}
+\newcommand{\polylog}{\mathrm{polylog}}
+
+\crefname{table}{表}{表}
+\crefname{algorithm}{算法}{算法}
+\Crefname{figure}{图}{图}
+\crefname{claim}{断言}{断言}
+\crefname{lemma}{引理}{引理}
+\crefname{corollary}{推论}{推论}
+\Crefname{theorem}{定理}{定理}
+\Crefname{proof}{证明}{证明}
+\Crefname{equation}{等式}{等式}
+
+\captionsetup[table]{name=表}

@@ -1,0 +1,394 @@
+% ---- Macros migrated from original lecture preamble ----
+\providecommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
+%{lecture number}{lecture date}{彭攀}{Your name}{title}
+\lecture{16}{June 6, 2025}{彭攀}{邬靖宇，丰逸飞}{图的稀疏化}
+
+
+这一章中我们研究图的稀疏化的问题。给定一个图$G=(V,E)$，我们希望寻找它的一个生成子图$G'=(V,E'),E'\subseteq E$，使得$H$能保持$G$的某些指定性质，且满足$|E'|$远小于$|E|$。
+
+例如，此前讨论过的生成树问题就可以看作一种保持连通性的稀疏化。
+
+
+
+
+\section{跨度图 (spanner)}
+
+本节中我们研究跨度图 (spanner) 的问题. 这里我们想保留的是一个图的距离性质.
+
+\begin{definition}
+    对于图$G=(V,E)$, $G$的一个$\alpha$-跨度图 ($\alpha$-spanner) 指的是它的一个生成子图$G'=(V,E')$, 满足
+    \[
+    \forall v,u\in V:\quad d(u,v)\le d_{G'}(u,v)\leq\alpha d(u,v).
+    \]
+\end{definition}
+
+\begin{theorem}
+\label{thm:multiplicative spanner}
+    对于$n$阶图$G$, 给定正整数$k\ge 1$, 则$G$存在一个$(2k-1)$-展开$G'$有$O(n^{1
+    +\frac{1}{k}})$条边.
+\end{theorem}
+
+直观地说, 我们总是可以在$G$中删掉大量边, 却保持每对点的距离至多增大到$2k-1$倍. 当$k=1$时, $G'$实际上就是原图$G$; 当$k=\Omega(\log n)$时, $k$-spanner的边数为$O(n)$.
+
+\begin{conjecture}[Erdős 围长猜想]
+    对于正整数$k\ge 2$以及足够大的$n$, 存在$n$阶图$G$围长至少为$2k+1$, 且有$\Omega(n^{1+\frac{1}{k}})$条边.
+\end{conjecture}
+
+这个猜想$k$较小的情形, 以及它的逆命题已经被证明成立. 如果这个猜想为真, 那么 \Cref{thm:multiplicative spanner} 给出的界是紧的.
+
+\begin{claim}
+    如果 Erdős 围长猜想为真, 那么对于每个正整数$n$, 都存在一个$n$阶图$G$, 使得如果$G'$是$G$的一个$(2k-1)$-展开, 则$G'$有$\Omega(n^{1+\frac{1}{k}})$条边.
+\end{claim}
+
+\begin{proof}
+    我们采用 Erdős 围长猜想中的图$G$, 即$G$中没有长度不超过$2k$的圈, 且$G$的边数为$\Omega(n^{1+\frac{1}{k}})$. 下面我们证明$G$没有非平凡的$(2k-1)$-展开.
+
+    采用反证法: 假定某个生成子图$G'=(V,E')$是$G$的一个$(2k-1)$-展开, 选取某条不在$E'$中的边$uv$, 则应有$d_{G'}(u,v)\le (2k-1)d(u,v)=2k-1$, 即存在某条长为至多$2k-1$的$u-v$路径. 然而, 在$G$中将这条路径与边$uv$拼接起来就得到了一个长度不超过$2k$的圈, 矛盾.
+\end{proof}
+
+现在我们来证明 \Cref{thm:multiplicative spanner} , 证明方法实际上是给出一个算法, 构造出一个这样的展开$G'$.
+
+\paragraph{Create-Spanner 算法}   
+\begin{itemize}
+    \item 初始化一个生成子图$G'=(V,\emptyset)$.
+    \item 将$G$中所有边按任意顺序排序$e_1,\ldots,e_m$.
+    \item 对于排序中的每条边$e$依次判断: 如果此时$d_{G'}(u,v)>2k-1$, 则将$e$加入$E(G')$中.
+    \item 输出$G'$.
+\end{itemize}
+
+\begin{claim}
+    Create-Spanner 算法输出的生成子图$G'$是$G$的一个$(2k-1)$展开.
+\end{claim}
+
+\begin{proof}
+    任取$G$中一对点$u,v$, 记它们在$G$中的最短路为$P$, 则对每条边$xy\in P$, 以下二者必居其一:
+    
+    \begin{itemize}
+        \item $xy\in E(G')$;
+        \item $G'$中存在$x-y$路, 且其长度不超过$2k-1$. 这是因为如果不存在这样的路, 那么在构造$E(G')$的循环中, 边$xy$应当被加入$E(G')$.
+    \end{itemize}
+    
+    因此, 对于每对点$u,v$, 总有
+    \[
+    d_{G'}(u,v)\le\sum_{xy\in P}d_{G'}(x,y)\le\sum_{xy\in P}(2k-1)=(2k-1)d_{G}(u,v).
+    \]
+\end{proof}
+
+\begin{claim}
+    $G'$的围长大于$2k$.
+\end{claim}
+
+\begin{proof}
+    假定$G'$中存在长为至多$2k$的圈$C$, 取$C$中最后被加入的边$uv$, 则在$uv$加入时, $C$上剩余的边已经为点对$u,v$提供了一条长度不超过$2k-1$的路, 与$uv$加入$E(G')$的条件矛盾.
+\end{proof}
+
+\begin{claim}
+    如果$n$阶图$G$的围长大于$2k$, 那么$G$的边数为$O(n^{1+\frac{1}{k}})$.
+\end{claim}
+
+\begin{proof}
+    采用反证法: 假定$G$的围长大于$2k$, 且有至少$10n^{1+\frac{1}{k}}$条边. 不断删除$G$中度数不超过$\lceil n^\frac{1}{k}\rceil$的点, 直到图中没有任何这样的点存在. 通过这种方式删除的点数量至多为$2n\lceil n^\frac{1}{k}\rceil$, 从而至少有$8n^{1+{1}{k}}$条边被保留.
+
+    由此得到的子图$G'$最小度$\delta(G')$大于$\lceil n^{\frac{1}{k}}\rceil$. 然而, 假定这样的图$G'$围长超过$2k$, 即从一个点出发的两条长度不超过$k$的不同路径终点不会相同, 则可以从一个点$v$出发构造一棵广度优先搜索树, 其高度为$k$, 除根$v$有至少$\delta(G')$个子节点外, 其它每个点都有至少$\delta(G
+    ')-1$个子节点.
+
+    因此这棵树的点数至少为
+    \[
+    1+\delta(G')+\sum_{i=2}^k \delta(G')(\delta(G')-1)^{i-1}\geq1+n^{
+    \frac{1}{k}}+\sum_{i=1}^k n^{
+    \frac{1}{k}}(n^{
+    \frac{1}{k}}-1)^{i-1}>(n^{\frac{1}{k}})^k=n.
+    \]
+    
+    从而$|V(G)|\geq|V(G')|>n$, 矛盾.
+\end{proof}
+
+结合以上结论, 我们就完成了 \Cref{thm:multiplicative spanner} 的证明.
+
+
+
+
+\section{割稀疏化}
+\textbf{目标：}给定一个$n$个顶点的无权图 $G=(V,E)$和 $\eps\in(0,1)$，找到一个更加稀疏的带权图$G'$使得图的割被保护，即
+\[
+\forall S\subset V,S\neq \emptyset:\quad E_{G'}(S,V\setminus S)\in(1\pm\eps) E_G(S,V\setminus S)
+\]
+我们称 $G'$ 是$G$的一个 $(1\pm\eps)$-割稀疏图,其中，$E_{G'}(S,V\setminus S)$ 是$G'$中穿过这个割的所有边权之和，$E_{G}(S,V\setminus S)$ 是$G$中穿过这个割的边的数量。
+
+\subsection{热身：完全图$K_n$的稀疏化}
+构造 $G'=G(n,p)$ 通过对于 $K_n$ 中的每一条边以 $p=\Omega(\frac{\log n}{n})$的概率保留，对于保留下来的边将其权重设置为 $1/p$，则以高概率 ($\geq 1-1/n^c$)，$G'$ 是$G$的一个 $(1\pm\eps)$-割稀疏图。
+
+之所以将权重设置为 $1/p$是为了保持其边权的期望仍然为 $1$，这个技巧也会在对一般的图的处理中用到。
+
+\subsection{对一般图做均匀采样}
+
+\begin{theorem}{(Karger 93)}
+\label{thm:cut-uniform}
+    若图 $G$ 的最小割为 $k$，并且每条边以 $p=\Omega(\frac{\log n}{k})$的概率采样，并设置其权重为 $1/p$，最终得到的图$G'$将保证 以 $\geq 1-1/n^5$ 的概率是$G$的一个 $(1\pm\eps)$-割稀疏图。
+\end{theorem}
+
+\begin{proof}
+    令 $X$ 为穿过某一个大小为 $k$ 的割$(S,V\setminus S)$的被采样的边的数量，注意到 $\E[X]=kp$，由 Chernoff 不等式，
+    \[
+    \Pr[\text{算法对于割$(S,V\setminus S)$失败}] = \Pr[|X-\E[X]|\geq \varepsilon \E[X]] \leq 2e^{-\varepsilon^2\E[X]/3}\leq 1/n^c
+    \]
+
+    这里不能对所有 $2^n$ 个割使用 union bound，我们需要更精细的分析。
+    \begin{claim}
+        对于任意 $\alpha\geq 1$，所有大小不超过 $\alpha k$ 的割的数量至多为 $n^{O(\alpha)}$。
+    \end{claim}
+    于是我们只对这些割使用 union bound，
+    \[
+    \Pr[\text{算法对于某个割失败}] \leq \int_1^\infty n^{O(\alpha)} e^{-\alpha c \log n}d\alpha \leq 1/n^5
+    \]
+\end{proof}
+
+\subsection{扩展：非均匀采样}
+注意到，均匀采样（即对每条边以同样的概率采样）的方法对于最小割很小的稠密图效果会很差，例如，哑铃图有 $\Omega(n^2)$ 条边但最小割为 $1$，用上一节的方法，我们只能得到一个边数大约为 $O(n^2\log n)$ 的图，这不是我们想要的，因此，我们应该考虑以不同的概率采样每一条边。直观上说，我们希望以更大的概率保留那些重要的边。
+
+\begin{definition}{($k$-边连通)}
+    图 $G$ 是 $k$-边连通的当且仅当删去任何$k-1$条边后 $G$ 仍然是连通的
+\end{definition}
+\begin{definition}{(强连通性)}
+    一个 $k$-强连通分量是指 一个极大的 $k$-边连通诱导子图。
+\end{definition}
+\begin{definition}{(边的强度)}
+    边 $e$ 的强度定义为最大的 $k$ 使得 $e$ 属于某个 $k$-强连通分量。
+\end{definition}
+
+
+\begin{lemma}
+    \begin{itemize}
+        \item 对于任意一条边 $e$, $k_e$ 是唯一的。
+        \item 对于任意两个值 $k_2\geq k_1$，一个$k_2$-强连通分量一定被包含在某个 $k_1$-强连通分量内部。
+        \item $\sum_e k_e\leq n-1$
+    \end{itemize}
+\end{lemma}
+
+\begin{proof}
+    前两条结论的成立是显然的，我们这里只证明第三条结论。
+
+       设$G$的边连通度为$k$, 则每条边$e$的强度至少为$k$. 考虑 $G$ 的一个最小边割$c$，其包含 $k$ 条边，并且其中每一条边的强度 $k_e\geq k$，因此，这些边对于求和项 $\sum_{e\in c}\frac{1}{k_e}$ 的贡献至多为 $k\cdot \frac{1}{k} = 1$。
+    接着我们删去这些边，注意到对于图中剩下的边，其强度$k_e$不会变大，因此对于每个单独的连通分量$G'$，都有$\sum_{e\in G'}\frac{1}{k_e'}$不小于$\sum_{e\in G'}\frac{1}{k_e}$，其中$k_e'$表示边$e$在$G'$中的强度。而剩下的图至少包含两个连通分量，我们可以对这些连通分量做重复的操作，不断删去图中的边，最终得到一个空图。这个过程中每次删除至少会增加一个连通分量，因此删除至多重复 $n-1$ 次，而每次删除的边对求和项的贡献 $\sum_{e\in c}\frac{1}{k_e}\leq\sum_{e\in c}\frac{1}{k_e'}\leq1$，因此 $\sum_{e}\frac{1}{k_e} \leq n-1$。
+\end{proof}
+
+Benczúr-Karger 稀疏化算法采样每条边 $e$ 以 $p_e = q/k_e$ 的概率，其中  $q=C\log n/\varepsilon^2$，再将保留下来的边的权重设置为 $1/p_e$。
+
+\begin{theorem}{(几乎线性的边稀疏算法)}
+    对于任意图 $G$ 和 $\varepsilon\in(0,1)$，应用Benczúr-Karger 稀疏化算法得到图 $H$，图$H$以很高概率满足：(1) 其边数不超过 $O(n\log n /\eps^2)$；(2) $H$是 $G$的$(1\pm \eps)$-割稀疏图。并且其构造时间不超过 $\widetilde{O}(|E|)$。
+\end{theorem}
+
+\begin{proof}
+    根据Benczúr-Karger 稀疏化算法得到的图，其边数的期望为 $O(nq) = O(n\log n/\eps^2)$。因此，根据 Chernoff bound，实际的边数也为 $O(n\log n/\eps^2)$。
+
+    下面我们证明其维护了割的数量。
+    令 $G_w$ 为将 $G$ 上的边的权重重新设置为 $1/p_e = k_e/q$ 后所得到的图。注意到图 $G_w$ 中边的权重不是完全相同的，我们将 $G_w$ 根据其边的权重划分为一些权重相等的子图。
+
+    令 $k_1<k_2<\dots<k_{m'}$ 为 $G$ 上所有的边的强度值，注意到 $m'\leq m$ 因为每条边的权重是唯一的。定义子图 $F_i$ 为 由 $G$ 中强度至少为 $k_i$ 的边所构成的图，于是我们可以将 $G_w$ 改写为
+    \[
+    G_w=\sum_i\frac{k_i-k_{i-1}}{q}\cdot F_i
+    \]
+    这是因为对于每一条强度为 $k_i$的边，其在左式 $G_w$中的权重为 $k_i/q$，而在右式中的权重为 $(k_i-k_{i-1})/q+(k_{i-1}-k_{i-2})/q+\dots + k_1/q=k_i/q$。
+
+    接着，我们分别考虑在每个 $F_i$上的采样过程。对于图 $G$中的每一条边 $e$，算法以概率 $p_e$保留它，这等价于保留所有包含$e$的子图 $F_i$。
+
+    固定一个 $F_i$，我们断言
+    \begin{claim}
+    \label{clm: C-cut}
+        对于 $F_i$ 的每一个连通分量 $C$，$C$中的每一个割的期望大小都至少为 $q$。
+    \end{claim}
+    据此，我们可以利用 \Cref{thm:cut-uniform} 推断出：随机采样后的每一个割值依然在其期望附近。下面我们给出 \Cref{clm: C-cut} 的证明
+    \begin{proof}
+        考虑 $C$ 的一个任意的割，假设其有 $k'$ 条边，于是这些边的强度至多为 $k'$，根据引理的第二条，可以知道在原图 $G$中，这些边的强度也至多为 $k'$，因此，这些边被采样的概率至少为 $q/k'$，这意味着被采样到的边的数量的期望至少为$q$。
+    \end{proof}
+
+    于是，根据 \Cref{thm:cut-uniform} 可知，对于 $C$ 中的每一个割，或者说对于 $F_i$ 中的每一个割，都维护了其期望在 $(1\pm\eps)$ 的乘性误差内。
+
+    对于所有的图 $F_i$ 使用 union bound，可知算法在$(1\pm\eps)$ 的乘性误差内维护了原图 $G$ 中的所有割值，也就是说以很高概率是我们可以得到原图的一个 $(1\pm\eps)$-割稀疏图。
+\end{proof}
+
+% Benczúr-Karger的证明框架：
+% \begin{itemize}
+%     \item 期望边数为 $\sum_ep_e=O(nq)$
+%     \item 利用 Chernoff bound 估计被采样的边数
+%     \item 根据边的强度将原图划分为一些子图 $F_i$ 的并
+%     \item 对每一个子图  $F_i$ 使用 Karger’s Theorem
+%     \item 汇总这些子图并证明所有的割都被保护了
+% \end{itemize}
+
+\section{谱稀疏化}
+基于谱相似性， Spielman 和 Teng介绍了一种更强的稀疏化的形式。
+
+\textbf{目标：}给定一个$n$个顶点的无权图 $G=(V,E)$和 $\varepsilon\in(0,1)$，找到一个更加稀疏的带权图$H$使得原图的Laplace矩阵被保护，即
+\[
+(1-\eps) x^TL_G x\leq x^TL_H x\leq (1+\eps) x^TL_G x, \quad \forall x\in \mathbb{R}^{|V|}
+\]
+这意味着
+\[
+(1-\eps) L_G \preceq L_H \preceq (1+\eps) L_G
+\]
+并且 $L_H$ 的所有特征值都是 $L_G$ 的 特征值的 $(1\pm\eps)$ 近似。我们称 $H$ 是$G$的一个 $(1\pm\eps)$-谱稀疏图。
+
+\subsection{谱稀疏化比割稀疏化更困难}
+\begin{lemma}
+    如果 $H$ 是 $G$ 的一个 $(1\pm\eps)$-谱稀疏图，那么 $H$ 也是 $G$ 的一个 $(1\pm\eps)$-割稀疏图。
+\end{lemma}
+\begin{proof}
+    对于顶点集 $S\subseteq V$，定义指示向量 $\chi_S=(\mathbb{I}[v\in S])_{v\in V}$，于是
+    \[
+    \chi_S^TL_G \chi_S=w_G(\delta_G(S)),\quad 
+    \chi_S^TL_H \chi_S=w_H(\delta_H(S))
+    \]
+    利用谱稀疏化的定义即证。
+\end{proof}
+
+Spielman-Teng 证明了每一个图都可以在亚线性的时间内计算出一个只有 $O(n\log^cn/\eps^2)$ 条边的$(1\pm\eps)$-割稀疏图。后来他们将这个结论中的常数 $c$ 改进到了 $1$。
+
+\subsection{分析}
+\begin{theorem}{(稀疏近似定理)}
+\label{thm:sparse-approx}
+    令 $v_1,\dots, v_m\in\mathbb{R}^n$ 满足 $\sum_{i=1}^m v_i v_i^T = I_n$，则存在一个子集 $T$ 包含不超过 $O(n\log n/\eps^2)$个向量和一些标量 $s_i$ 满足
+    \[
+    (1-\eps)I_n\preceq \sum_{i\in T} s_iv_iv_i^T\preceq (1+\eps)I_n
+    \]
+\end{theorem}
+
+为了找到这些向量和标量，我们可以按照 $p_i\propto||v_i||^2$ 的概率采样向量 $v_i$，如果被采样到了，则将标量 $s_i$ 设置为 $1/p_i$，这样我们保证了 $\E[s_iv_iv_i^T]=v_iv_i^T$，整体期望仍然是 $I_n$，算法如下
+\begin{enumerate}
+    \item 令 $\vec{s}=0$， $\tau \gets \frac{6\ln n}{\eps^2}$
+    \item for $i=1\dots m$
+        \begin{itemize}
+            \item 令$p_i\gets \tau ||v_i||^2$
+            \item 以$p_i$的概率将 $s_i$ 设置为 $1/p_i$
+        \end{itemize}
+    \item 输出 $M=\sum s_iv_iv_i^T$
+\end{enumerate}
+
+下面我们证明这个算法的稀疏性和正确性。
+
+\begin{proof}
+    对于稀疏性的分析，设向量 $\vec{s}$ 中非$0$项的数量为 $S$，则
+    \[
+    \E[S] =  \sum_i p_i=\tau \sum_i||v_i||_2^2=\tau\sum_i v_i^Tv_i = \tau\sum_i \Tr(v_i^Tv_i) = \Tr(\tau\sum_i v_iv_i^T) =\tau n = O(n\log n/\eps^2)
+    \]
+    对于正确性的证明，我们可以利用矩阵 Chernoff bound [Tropp 2012]
+    \begin{theorem}{(矩阵 Chernoff bound)}
+    \label{thm:mathix-chernoff}
+        令 $X_1,\dots,X_m\in\mathbb{R}^{n\times n}$相互独立，且 $0\preceq X_i\preceq rI$，假设
+        \[
+        \mu_{\min}\cdot I_n\preceq \sum_{i=1}^n \E[X_i]\preceq \mu_{\max}\cdot I_n
+        \]
+        那么对任意 $\eps\in(0,1)$，
+        \[
+        \Pr\left[\lambda_{\max}\left(\sum_{i=1}^nX_i\right)\geq (1+\eps)\mu_{\max}\right]\leq n\cdot e^{-\eps^2\mu/3r}, \quad \Pr\left[\lambda_{\min}\left(\sum_{i=1}^nX_i\right)\leq (1-\eps)\mu_{\min}\right]\leq n\cdot e^{-\eps^2\mu/2r}
+        \]
+    \end{theorem}
+    根据 \Cref{thm:mathix-chernoff}，令 $X_i=s_iv_iv_i^T$，注意到 $\sum_{i=1}^n \E[X_i]=\sum_{i=1}^n\E[s_iv_iv_i^T]=\sum_{i=1}^n v_iv_i^T=I_n$，因此 $\mu_{\max}=\mu_{\min}=1$。
+    于是以很高概率，矩阵 $\sum_{i=1}^ns_iv_iv_i^T$ 的所有特征值都在 $1\pm\eps$ 之间，即
+    \[
+        (1-\eps)I_n\preceq \sum_{i\in T} s_iv_iv_i^T\preceq (1+\eps)I_n
+    \]
+\end{proof}
+
+% 注意到，一个有$m$条边的图的Laplace矩阵总是可以表示成$m$个只有一条边的图的Laplace矩阵之和，即$
+% L_G=\sum_{e\in E} b_e b_e^T$。
+% 这个定理让我们有信心将 $L_G$ 也只用不超过 $O(n\log n/\eps^2)$个向量的和来近似。
+
+\begin{definition}{(伪逆)}
+    令 $G$ 为连通图，其Laplace矩阵为$L_G=\sum_{i=1}^n \lambda_i u_iu_i^T$，其中 $\lambda_1=0$，定义
+    \[
+    L_G^\dagger= \sum_{i=2}^n \frac{1}{\lambda_i} u_iu_i^T,\quad L_G^{\dagger/2}= \sum_{i=2}^n \frac{1}{\sqrt{\lambda_i}} u_iu_i^T
+    \]
+\end{definition}
+
+\begin{theorem}{(Spielman-Srivastava)}
+    对于任意图 $G$ 和 $\varepsilon\in(0,1)$，存在一个重新调整权重的图 $H$，其边数不超过 $O(n\log n /\eps^2)$，$H$是 $G$的$(1\pm \eps)$-谱稀疏图。
+\end{theorem}
+\begin{proof}
+    将Laplace矩阵展开为 $L_G=\sum_{e\in E} b_e b_e^T$。令 $U\in\mathbb{R}^{n\times (n-1)}$ 为第 $i$ 列为 $L_G$的第 $i+1$ 个特征向量 $u_{i+1}$ 的矩阵，定义
+    \[
+    v_e=U^T L_G^{\dagger/2} b_e
+    \]
+    易证， $\sum_{e\in E}v_ev_e^T=I_{n-1}$，利用 \Cref{thm:sparse-approx} 即得
+    \[
+    (1-\eps)I_{n-1}\preceq \sum_{e\in E} s_ev_ev_e^T\preceq (1+\eps)I_{n-1}
+    \]
+    也就是说
+    \[
+    (1-\eps)L_G\preceq\sum_{e\in E}s_eb_eb_e^T \preceq (1+\eps)L_G
+    \]
+        
+    令 $H$ 为边 $e$ 上的边权为 $s_e$ 的图，因为 $L_H=\sum_{e\in E}s_eb_eb_e^T$，因此 $H$是 $G$的一个$(1\pm\eps)$-谱稀疏图，其边数不超过 $O(n\log n /\eps^2)$
+\end{proof}
+
+\subsection{几乎线性时间的谱稀疏化}
+我们想要高效的应用谱稀疏化算法，其核心在于快速地计算出采样概率。我们假设已知一个几乎线性时间的Laplace求解器 [ST14]，即给定Laplace矩阵$L_G$和一个向量$b$后，我们可以在几乎线性的时间内计算出 $x$使得：
+\[
+L_G x\approx b \Rightarrow x\approx L_G^\dagger b
+\]
+
+我们计算边 $e=(i,j)$ 的采样概率如下：
+\[
+||v_e||_2^2 = ||U^T L_G^{\dagger/2} b_e||_2^2 = b_e^T L_G^\dagger b_e =  b_e^T  L_G^\dagger L_G L_G^\dagger b_e = b_e^T  L_G^\dagger BB^T L_G^\dagger b_e = ||B^T L_G^{\dagger} b_e||_2^2
+\]
+其中 $B\in\mathbb{R}^{n\times m}$为边关联矩阵，因此我们只需要在 $n$维空间中计算 $m=|E|\leq n^2$ 个向量即可。
+
+为了加速计算，我们可以利用 JL-Lemma 对$B^T L_G^{\dagger} b_e$进行降维，构造矩阵 $Q\in\mathbb{R}^{k\times m}$，其中 $k\approx \log n/\eps^2 $，$Q_{ij}\sim N(0,1/k)$, 于是对于任意 $i,j\in V$，
+\[
+(1-\eps)||v_e||_2^2 \leq ||QB^T L_G^{\dagger} b_e||_2^2\leq (1+\eps)||v_e||_2^2
+\]
+
+于是我们只需要计算 $Z = QB^T L_G^{\dagger} \in \mathbb{R}^{k\times m}$，这只需要花费$O(m\log n)$的存储空间，每当我们需要计算采样概率 $Zb_e$，我们只需要将 $Z$ 中的两列相减，这可以在 $O(\log n)$的时间内完成，于是总运行时间为 $\widetilde{O}(m)$。
+
+最后，我们还需要说明矩阵 $Z = QB^T L_G^{\dagger}$ 可以在 $\widetilde{O}(m)$的时间内计算出来。首先，我们先计算 $QB^T$，因为$B^T$的每一行只有两个非零元素，因此这可以在 $O(km)=\widetilde{O}(m)$的时间内完成。
+注意到 $Z$ 的第 $i$ 行等于 $QB^T$ 的第 $i$ 行乘矩阵 $L_G^{\dagger}$，这可以写成 $L_G^\dagger\cdot y$的形式，利用已知的几乎线性时间的 Laplace 求解器，因此计算矩阵 $Z$ 的总时间为 $\widetilde{O}(m)$。
+
+\section{应用}
+\subsection{割稀疏化的应用}
+割稀疏化可以帮助实现许多图上的问题的快速近似算法，例如，对于近似 $s-t$最小割问题，我们可以先构造一个只有$O(n\log n/\eps^2)$条边的 $(1\pm\eps)$-割稀疏图$H$，再在$H$上运行精确求解的算法，最终得到一个 $(1\pm 3\eps)$的近似解（Karger's Algorithm [Kar00]可以在几乎线性的时间内求解精确的最小割）。
+
+\subsection{谱稀疏化的应用}
+谱稀疏化的一个主要的应用场景是设计几乎线性的Laplace求解器，这在很多图算法和线性代数中有重要的意义。
+
+另一个应用场景是求解最小二乘问题。给定 $A\in \mathbb{R}^{n\times d}$ 和 $b\in \mathbb{R}^{n}$，目标是找到 $x\in \mathbb{R}^{d}$ 使得 $||Ax-b||_2$ 最小。我们考虑约束个数很多的情况，即 $n\gg d$，此时精确求解的算法需要 $\Omega(n\mathrm{poly}(d))$ 的时间。
+
+为了降低时间开销，我们希望找到一个 $x'\in \mathbb{R}^{d}$ 使得 $||Ax-b||_2 \leq (1+\eps)||Ax-b||_2$，而只消耗 $\Tilde{O}(nd+\mathrm{poly}(d/\eps))$ 的时间，这是几乎线性的。
+
+这个问题的关键在于将矩阵 $A$ 压缩成一个 $k\times d$ 的矩阵 $B=SA$使得 $(1-\eps)AA^T\preceq BB^T \preceq (1+\eps)AA^T$，这等价于对任意的 $x$满足 $||Ax||_2\approx ||Bx||_2$，其中 $k=\mathrm{poly}(d/\eps)$，于是 
+\[
+\min_x ||Ax-b||_2 =\min_x ||A(x-A^{-1}b)||_2 \approx \min_x ||SA(x-A^{-1}b)||_2 = \min_x ||S(Ax-b)||_2 
+\]
+也就是说 $\min_x||S(Ax-b)||_2$ 的解就是原问题的近似解。
+
+为了得到矩阵 $S$，我们首先将问题归约到 $A$ 的列都是正交的情况，此时 $A^TA = \sum_{i=1}^n a_i a_i^T = I_d$，其中 $a_i$ 是 $A$ 的第 $i$ 列。根据 \Cref{thm:sparse-approx}，我们可以通过采样和重新设置权重的方式，得到矩阵 $B=\sum_{i=1}^n s_i a_i a_i^T\approx I_d$，其中只有 $O(d\log d/\eps^2)$ 个非零项，也就是说 $B$ 只有 $O(d\log d/\eps^2)$行，这就完成了对矩阵 $A$ 的压缩。
+
+\subsection{仅插入数据流模型下的谱稀疏化}
+注意到，在数据流模型下，我们可以构造一些小的稀疏化图，每个小的稀疏化图都是原图的一个小的子图的稀疏化，我们可以使用\textbf{合并和减小}(Merge \& Reduce) 的方法构造整个数据流的稀疏化图。
+
+假设 $\cA$ 是一个可以输出 $(1\pm\gamma)$-谱稀疏图的算法，令 $\text{size}(\gamma)=O(\gamma^{-2}n)$ 为 $\cA$ 输出的图的最大边数。
+注意到，
+\begin{proposition}
+\label{prop:merge_reduce}
+谱稀疏化满足如下性质，
+\begin{itemize}
+    \item 可合并：如果 $H_1,H_2$ 分别是 $G_1,G_2$的 $(1\pm\alpha)$-谱稀疏图，那么 $H_1\cup H_2$ 也是 $G_1\cup G_2$的 $(1\pm\alpha)$-谱稀疏图。
+    \item 可组合：如果 $H_3$ 是 $H_2$的 $(1\pm\alpha)$-谱稀疏图，$H_2$ 是 $H_1$的 $(1\pm\beta)$-谱稀疏图，那么 $H_3$ 是 $H_1$的$(1\pm\alpha \beta)$-谱稀疏图
+\end{itemize}
+    
+\end{proposition}
+
+于是我们可以设计 Merge \& Reduce 算法如下：
+\begin{itemize}
+    \item 将输入分割成 $t=m/\text{size}(\gamma)$ 个部分
+    \item 令 $G_i^0$ 为 第 $i$ 个部分所构成的子图
+    \item 递归定义：$G_i^j=G_{2i-1}^{j-1}\cup G_{2i}^{j-1},\quad \forall i\in[\log_2t],j\in [t/2^i]$
+    \item 应用稀疏算法 $\cA$: $H_i^0=G_i^0$, $H_i^j=\cA(H_{2i-1}^{j-1}\cup H_{2i}^{j-1})$
+\end{itemize}
+
+近似性保证：根据 \Cref{prop:merge_reduce}， $H_1^{\log_2t}$ 是一个$(1\pm\gamma)^{\log_2t}$-谱稀疏图，设置$\gamma=\frac{\eps}{2\log_2t}$，即可得到一个 $(1\pm\eps)$-谱稀疏图。
+
+复杂度保证：计算$H_1^{\log_2t}$最多只需要存储$2\cdot \text{size}(\gamma)\cdot \log_2t=O(\eps^{-2}n\log^3n)$条边，这是因为在每次计算完$H_i^j$后，我们就丢弃$H_{2i-1}^{j-1} $和$ H_{2i}^{j-1}$，也就是说对于每个 $j$，在任何时候我们只要存储最多两个 $H_i^j$。
+
+Merge \& Reduce 算法使得在数据流上构造谱稀疏器的算法变得非常简单、有效并且空间复杂度很好。
+% \bibliography{main}

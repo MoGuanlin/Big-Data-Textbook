@@ -1,0 +1,341 @@
+\ProvidesPackage{hidden_gem}[2024/07/14 v1.0 Lecture Notes Package]
+
+% Packages required
+\RequirePackage{geometry}
+\RequirePackage{setspace}
+\RequirePackage{fancyhdr}
+\RequirePackage{lastpage}
+\RequirePackage{ifthen}
+\RequirePackage{xstring}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{pgfornament} % ornaments !
+\RequirePackage{amsmath} % theorems
+\RequirePackage{amsthm}  % theorems
+\RequirePackage{amsfonts}  % theorems
+\RequirePackage{amssymb}  % required for \blacksquare
+\RequirePackage{enumitem}\setitemize{nolistsep}
+\RequirePackage{xcolor}
+\RequirePackage{hyperref}
+\RequirePackage[noabbrev,capitalise,nameinlink]{cleveref}
+\RequirePackage{dsfont}
+%\RequirePackage[utf8]{inputenc}
+%\RequirePackage[T1]{fontenc}
+%\RequirePackage{tgpagella}
+\RequirePackage{bm}
+\RequirePackage{nicefrac}
+
+% set margins to 2cm
+\geometry{margin=2cm}
+
+\usepackage{additional_sty}
+
+% -------------------------------------------
+% COLORS
+% -------------------------------------------
+
+% iroshizuku color names
+\definecolor{ama-iro}{RGB}{0, 158, 243.0}
+\definecolor{fuyu-gaki}{RGB}{251, 74, 52}
+\definecolor{momiji}{RGB}{245, 70, 111}
+\definecolor{hotaru-bi}{RGB}{229,221,58} % yellowish
+\definecolor{kon-peki}{RGB}{1,120,217}
+\definecolor{shin-kai}{RGB}{77,98,152}
+\definecolor{shin-ryoku}{RGB}{1,145,97}
+\definecolor{yama-budo}{RGB}{171,14,122}
+
+\definecolor{theoremcolor}{RGB}{77,98,152}
+\definecolor{definitioncolor}{RGB}{255, 213, 179}
+%\definecolor{examplecolor}{RGB}{210, 229, 205}
+\definecolor{examplecolor}{RGB}{255, 213, 179}
+
+
+\newcommand{\nathan}[1]{{\color{ama-iro} \textbf{NH:} #1}}
+
+% Custom commands for header information
+\newcommand{\varlecturenumber}{}
+\newcommand{\varlecturetitle}{}
+\newcommand{\varlecturedate}{}
+\newcommand{\junk}[1]{}
+\newcommand{\varlecturername}{}
+\newcommand{\varscribename}{}
+
+\newcommand{\lecturenumber}[1]{\renewcommand{\varlecturenumber}{#1}}
+\newcommand{\lecturetitle}[1]{\renewcommand{\varlecturetitle}{#1}}
+\newcommand{\lecturedate}[1]{\renewcommand{\varlecturedate}{#1}}
+\newcommand{\lecturername}[1]{\renewcommand{\varlecturername}{#1}}
+\newcommand{\scribename}[1]{\renewcommand{\varscribename}{#1}}
+
+% Header setup for pages other than the first
+\fancypagestyle{firstpage}{
+    \fancyhf{} % clear all header and footer fields
+    % page numbers:
+    \fancyfoot[C]{\thepage}
+    \renewcommand{\headrulewidth}{0pt}
+}
+
+\fancypagestyle{mystyle}{
+    \fancyhf{} % clear all header and footer fields
+    %\fancyhead[L]{Hidden Gem \varlecturenumber}
+    \fancyhead[C]{\color{black!50!white}%
+      $\diamond$ \textsc{大数据算法\varlecturenumber\;}%
+      $\diamond$}
+    % page numbers:
+    \fancyfoot[C]{\thepage}
+    %\renewcommand{\headrulewidth}{0.4pt}
+    \renewcommand{\headrulewidth}{0pt}
+}
+
+% Command to set the pagestyle for pages other than the first
+\newcommand{\setpagestyle}{
+    \thispagestyle{firstpage} % No header or footer on the first page
+    \pagestyle{mystyle}   % Custom header on subsequent pages
+}
+
+% Make the title box
+% \renewcommand{\maketitle}{
+%   \setpagestyle
+%   \begin{tcolorbox}[colback=shin-kai!15!white, colframe=black!75!shin-kai]
+%   \begin{minipage}{0.2\textwidth}
+%     \centering
+%     \includegraphics[scale=0.4]{../images/simons_hidden_gem_logo.png} 
+%   \end{minipage}%
+%   \hspace{0.01\textwidth} %
+%   \begin{minipage}{0.75\textwidth}
+%     \begin{spacing}{1}
+%     \raggedright
+%     {\large 大数据算法 \varlecturenumber} \\[1em]
+
+%     {\Large \textbf{\varlecturetitle}} \\[1em]
+
+%     {\emph{Lecturer:} \varlecturername. \emph{Scribe:} \varscribename} \\[0.5em]
+
+%     {\varlecturedate}
+%     \end{spacing}
+%   \end{minipage}
+%   %\begin{center}
+%   %\pgfornament[width=1.5cm, symmetry=v, ydelta=-5pt]{3} \quad {\Large \textsc{Sublinear Algorithms Hidden Gems}} \quad
+%   %\pgfornament[width=1.5cm, ydelta=-5pt]{3} \\[1em]
+%   %{\Large \textsc{Sublinear Algorithms Hidden Gems}} \\[1em]
+%   %\end{center}
+%     %\begin{center} \color{shin-kai}
+%       %\begin{spacing}{1.5}
+%         %{\LARGE \textsc{Hidden Gem \varlecturenumber: \varlecturetitle}} \\[1em]
+% %
+%         %{\large \varlecturedate} \\[1em]
+%       %\end{spacing} 
+%       %\emph{Lecturer:} \varlecturername. \emph{Scribe:} \varscribename
+%     %\end{center}
+%   \end{tcolorbox}
+%   \vspace{2em}
+% }
+
+\hbadness=10000
+\vbadness=10000
+
+\setlength{\oddsidemargin}{.25in}
+\setlength{\evensidemargin}{.25in}
+\setlength{\textwidth}{6in}
+\setlength{\topmargin}{-0.4in}
+\setlength{\textheight}{8.5in}
+
+\newcommand{\handout}[5]{
+   %\renewcommand{\thepage}{#1-\arabic{page}}
+   \noindent
+   \begin{center}
+   \framebox{
+      \vbox{
+    \hbox to 5.78in { {\bf 大数据算法}
+     	 \hfill #2 }
+       \vspace{4mm}
+       \hbox to 5.78in { {\Large \hfill #5  \hfill} }
+       \vspace{2mm}
+       \hbox to 5.78in { {\it #3 \hfill #4} }
+      }
+   }
+   \end{center}
+   \vspace*{4mm}
+}
+\newcommand{\syllabusstyle}[3]{
+   %\renewcommand{\thepage}{#1-\arabic{page}}
+   \noindent
+   \begin{center}
+   \framebox{
+      \vbox{
+    \hbox to 5.78in { {\bf 大数据算法}
+     	 \hfill #1 }
+       \vspace{4mm}
+       \hbox to 5.78in { {\Large \hfill #3  \hfill} }
+       \vspace{2mm}
+       \hbox to 5.78in { {\Large \hfill #2  \hfill} }
+      }
+   }
+   \end{center}
+   \vspace*{4mm}
+}
+%% \syllabus{October 27, 2015}{Ronitt A. Rubinfeld}
+\newcommand{\syllabus}[2]{\syllabusstyle{#1}{Lecturer:
+#2}{Course Information}}
+%% usage:
+%% \syllabus{September 8, 2004}{Ronitt A. Rubinfeld}
+
+\newcommand{\lecture}[5]{\handout{#1}{#2}{Lecturer:
+#3}{Scribe: #4}{Lecture #1: #5}}
+%% usage:
+%% \lecture{1}{September 4, 1996 }{Ronitt A. Rubinfeld }{name
+%%  of poor scribe}
+
+% --------------------------------------------------------------------------------
+% THEOREMS
+% --------------------------------------------------------------------------------
+
+\newtheorem{theorem}{定理}
+\newenvironment{boxtheorem}{\begin{theorem}}{\end{theorem}}
+\tcolorboxenvironment{boxtheorem}{colback=shin-kai!20!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+
+\newtheorem{lemma}[theorem]{引理}
+\newenvironment{boxlemma}{\begin{lemma}}{\end{lemma}}
+\tcolorboxenvironment{boxlemma}{colback=shin-kai!20!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+
+\newtheorem{proposition}[theorem]{性质}
+\newenvironment{boxproposition}{\begin{proposition}}{\end{proposition}}
+\tcolorboxenvironment{boxproposition}{colback=shin-kai!10!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+
+\newtheorem{observation}[theorem]{观察}
+\newenvironment{boxobservation}{\begin{observation}}{\end{observation}}
+\tcolorboxenvironment{boxobservation}{colback=shin-kai!10!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+
+\newtheorem{corollary}[theorem]{推论}
+\newtheorem{fact}[theorem]{事实}
+
+\newtheorem{question}[theorem]{问题}
+\newtheorem{question*}{Question}
+\newenvironment{boxquestion}{\begin{question}}{\end{question}}
+\tcolorboxenvironment{boxquestion}{colback=shin-kai!20!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+\newenvironment{boxquestion*}{\begin{question*}}{\end{question*}}
+\tcolorboxenvironment{boxquestion*}{colback=shin-kai!20!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+
+\newtheorem{conjecture}[theorem]{猜想}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定义}
+\newenvironment{boxdefinition}{\begin{definition}}{\end{definition}}
+\tcolorboxenvironment{boxdefinition}{colback=definitioncolor, colframe=white,
+    colbacktitle=fuyu-gaki!20!white, coltitle=fuyu-gaki}
+
+\newtheorem{remark}[theorem]{标注}
+
+\newtheorem{notice}[theorem]{注意}
+
+\newtheorem{claim}[theorem]{断言}
+
+\newtheorem{example}[theorem]{例子}
+\newenvironment{boxexample}{\begin{example}}{\end{example}}
+\tcolorboxenvironment{boxexample}{colback=examplecolor!50!white, colframe=white,
+    colbacktitle=hotaru-bi!20!white, coltitle=hotaru-bi}
+
+\theoremstyle{definition}
+\newtheorem{exercise}[theorem]{练习}
+\newenvironment{boxexercise}{\begin{exercise}}{\end{exercise}}
+\tcolorboxenvironment{boxexercise}{colback=shin-kai!10!white, colframe=white,
+    colbacktitle=shin-kai!20!white, coltitle=shin-kai}
+
+% hyperref colors:
+\hypersetup{
+  colorlinks=true,
+  linkcolor=momiji,
+  filecolor=ama-iro,
+  urlcolor=momiji,
+  citecolor=shin-ryoku
+}
+
+% QED symbol
+\renewcommand{\qedsymbol}{$\blacksquare$}
+
+% Probability
+\newcommand{\std}{\operatorname{{std}}}
+\newcommand{\Var}{\operatorname{{Var}}}
+\newcommand{\Cov}{\operatorname{{Cov}}}
+\newcommand{\Varx}{\mathop{{\bf Var}\/}}
+\newcommand{\E}{\operatorname{{\mathds E}}}
+\newcommand{\Ex}{\mathop{{\mathds E}\/}}
+\renewcommand{\Pr}{\operatorname{{Pr}}}
+\newcommand{\Prx}{\mathop{{\Pr}\/}}
+
+
+% Calligraphic Letters
+\newcommand{\cA}{\mathcal A}
+\newcommand{\cB}{\mathcal B}
+\newcommand{\cC}{\mathcal C}
+\newcommand{\cD}{\mathcal D}
+\newcommand{\cE}{\mathcal E}
+\newcommand{\cF}{\mathcal F}
+\newcommand{\cG}{\mathcal G}
+\newcommand{\cH}{\mathcal H}
+\newcommand{\cI}{\mathcal I}
+\newcommand{\cJ}{\mathcal J}
+\newcommand{\cK}{\mathcal K}
+\newcommand{\cL}{\mathcal L}
+\newcommand{\cM}{\mathcal M}
+\newcommand{\cN}{\mathcal N}
+\newcommand{\cO}{\mathcal O}
+\newcommand{\cP}{\mathcal P}
+\newcommand{\cQ}{\mathcal Q}
+\newcommand{\cR}{\mathcal R}
+\newcommand{\cS}{\mathcal S}
+\newcommand{\cT}{\mathcal T}
+\newcommand{\cU}{\mathcal U}
+\newcommand{\cV}{\mathcal V}
+\newcommand{\cW}{\mathcal W}
+\newcommand{\cX}{\mathcal X}
+\newcommand{\cY}{\mathcal Y}
+\newcommand{\cZ}{\mathcal Z}
+
+% Blackboard Bold letters
+\newcommand{\bC}{\mathds C}
+\newcommand{\bE}{\mathds E}
+\newcommand{\bF}{\mathds F}
+\newcommand{\bN}{\mathds N}
+\newcommand{\bR}{\mathds R}
+\newcommand{\bQ}{\mathds Q}
+\newcommand{\bZ}{\mathds Z}
+
+% indicator
+\newcommand{\ind}[1]{\mathds{1}\left[ #1 \right]} 
+
+% common sets
+\newcommand{\zo}{\{0,1\}}
+\newcommand{\pmset}{\{\pm 1\}}
+
+% distance
+\newcommand{\dist}{\mathrm{dist}}
+
+% TV distance
+\newcommand{\tvdist}{\mathrm{dist}_{\mathsf{TV}}}
+
+\newcommand{\poly}{\mathrm{poly}}
+
+% definitions (from https://tex.stackexchange.com/questions/4216/how-to-typeset-correctly)
+\newcommand*{\define}{\mathrel{\vcenter{\baselineskip0.5ex \lineskiplimit0pt
+                      \hbox{\scriptsize.}\hbox{\scriptsize.}}}%
+                      =}
+% e.g. and i.e.
+\newcommand*\ie{i.\kern.1em e.\ }
+\newcommand*\eg{e.\kern.1em g.\ }
+
+% probability
+
+\newcommand{\Pru}[1]{\underset{#1}{\Pr}}
+\newcommand{\Exu}[1]{\underset{#1}{\bE}}
+
+% variable names
+\newcommand{\eps}{\varepsilon}
+
+\bibliographystyle{alphaurl}
+\endinput
+

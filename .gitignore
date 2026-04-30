@@ -1,0 +1,27 @@
+# LaTeX build output
+/build/
+/elegantbook-cn.pdf
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# Local editor and OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local downloads and temporary backups
+*.zip
+*.bak
+*.tmp
+*.temp
+

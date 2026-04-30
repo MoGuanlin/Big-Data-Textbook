@@ -1,0 +1,819 @@
+% ---- Macros migrated from original lecture preamble ----
+\providecommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+
+\providecommand{\R}{\mathbb{R}}
+\providecommand{\Tr}{\mathrm{Tr}}
+\providecommand{\sgn}{\mathrm{sgn}}
+\providecommand{\NA}{\mathcal{A}(G)}
+\providecommand{\NL}{\mathcal{L}(G)}
+\providecommand{\vol}{\mathrm{vol}}
+\providecommand{\qf}[2]{{#1}^{\top}{#2}{#1}}
+\providecommand{\argmin}{\mathrm{argmin}}
+
+\providecommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+
+\lecture{14}{May 27, 2025}{彭攀}{徐怡，徐航宇，谢凯洋}{谱图论基础：Basics of Spectral Graph Theory}
+谱图论通过研究与图相关的矩阵的代数信息（如特征值，特征向量等）来揭示图的组合信息（如两点之间是否连边，是否有最短路径等）。
+很多组合优化的经典算法的运行时间都是输入规模的多项式，而使用谱图论的知识，可以得到更高效的算法。下面是几个谱图论的应用场景。
+
+\paragraph{图分割与聚类}
+谱图论通过分析拉普拉斯矩阵的特征系统，为图分割和聚类问题提供了强有力的数学工具。与传统基于局部优化的方法相比，谱方法能够捕捉图的全局结构特征，在保证分割质量的同时维持子图平衡性。这种方法在图像分割、社交网络分析和数据聚类等领域展现出显著优势，特别是对于复杂网络结构的识别具有独特价值。
+
+\paragraph{网页排名算法}
+基于随机游走理论和马尔可夫链分析，PageRank算法利用谱方法将网页重要性排序问题转化为矩阵特征向量求解。该方法通过分析网络链接的全局结构，克服了传统基于内容匹配的排名方法的局限性。谱分析不仅确保了算法的收敛性，还为处理超大规模网络提供了理论基础，成为现代搜索引擎的核心技术。
+
+\paragraph{扩展图与伪随机性}
+扩展图作为具有强连通性的稀疏图，其性质通过拉普拉斯矩阵的特征值谱来刻画。谱图论为这类图的构造和分析提供了系统框架，使其在纠错码设计、随机数生成和分布式计算中发挥关键作用。基于谱理论的构造方法相比随机方法具有更好的理论保证和性能表现。
+
+\paragraph{图稀疏化与拉普拉斯求解器}
+图稀疏化技术通过谱理论保留图的关键代数特性，在大幅减少边数的同时维持原图的主要结构性质。这为设计高效的拉普拉斯系统求解器奠定了基础，使得处理大规模图计算问题成为可能。该方法在科学计算、机器学习优化和网络分析中具有广泛应用，显著提升了计算效率
+
+\bigskip
+
+我们先回顾一下线性代数的相关知识。
+给定图$G=(V,E)$，顶点数为$|V|=n$，其相关的矩阵有：
+\begin{itemize}
+    \item 邻接矩阵：$A\in\R^{n\times n}$。
+    $A_{ij}=1$意味着边$(i,j)\in E$；$A_{ij}=0$意味着$i$与$j$之间不连边
+    \item 度数矩阵：$D$，是一个对角矩阵，对角线上的元素$D_{ii}=\deg(i)$，其余位置的值为0
+    \item 拉普拉斯矩阵：$L:=D-A$
+    \item 正则化的拉普拉斯矩阵：$\cL:=D^{-1/2}LD^{-1/2}$
+\end{itemize}
+
+\begin{definition}[矩阵的特征值和二次型]
+    \quad
+    
+    \begin{itemize}
+        \item 对于矩阵$A$，如果向量$x$和标量$\lambda$满足$Ax=\lambda x$，
+        则$\lambda$被称为$A$的特征值，$x$被称为$A$的特征向量。
+
+        \item 给定$n\times n$的对称矩阵$A$和向量$x\in\R^n$，二次型的表达式为$x^\top Ax$。
+
+        \item 如果对所有的向量$x$，都有$x^\top Ax\ge0$，则称矩阵$A$是半正定的，记为$A\succeq0$。
+    \end{itemize}
+\end{definition}
+
+矩阵有以下一些基础的性质：
+
+\begin{fact}\label{fact:trace}
+    矩阵$A\in\R^{n\times n}$的迹记为$\Tr(A)=\sum_{i=1}^n A_{ii}$，是对角线元素之和。
+    假设$A$的$n$个特征值为$\lambda_1,\dots,\lambda_n$，
+    则迹等于特征值之和，即$\Tr(A)=\sum_{i=1}^n \lambda_i$。
+\end{fact}
+
+\begin{theorem}[谱定理]\label{thm:spectral-thm}
+    实对称矩阵是一个元素都为实数的对称矩阵。
+    实对称矩阵的特征值都是实数，特征向量都是实向量，且不同特征值对应的特征向量相互正交。
+\end{theorem}
+
+关于矩阵的特征值，有以下概念和引理：
+
+\begin{definition}[Rayleigh商/瑞利商]
+    对称矩阵$M$与非零向量$x$的瑞利商定义为：
+    \[R(M,x)=\frac{\qf{x}{M}}{\qf{x}{}}\]
+\end{definition}
+
+\begin{lemma}
+\label{lem:rayleigh}
+    设对称矩阵$M\in\rspace{n\times n}$的特征值为$\lambda_1\leq\dots\leq\lambda_n$，对应的特征向量为$v_1,\dots,v_n$，则：
+    \[\lambda_i=\min_{x\perp\mathrm{span}\{v_{1},\dots,v_{i-1}\}}\frac{\qf{x}{M}}{\qf{x}{}}\]
+
+    其中，\textcolor{blue}{最大}的特征值又可以写成：$\lambda_n=\max_{x\in\R^n}\frac{\qf{x}{M}}{\qf{x}{}}$。
+\end{lemma}
+
+瑞利商可以视作正则化的二次型，即消除向量的模长的影响。上述引理的直觉是，矩阵的二次型总在特征向量对应的方向受影响最大。以$\lambda_n$为例，由于实对称矩阵的特征向量相互正交，构成了一组正交基，可以将任意向量$x$写成$\sum_{i=1}^nx_iv_i$，则容易验证$R(M,x)=\sum_{i=1}^n\lambda_ix_i^2/\sum_{i=1}^nx_i^2$。详细证明可以参考 Spielman 的著作 \textit{Spectral and Algebraic Graph Theory} 第2.1节\footnote{Spielman, D. A. (2019). \textit{Spectral and Algebraic Graph Theory}. Yale University.}。
+
+\section{邻接矩阵（Adjacency Matrix）}
+给定一个简单图$G$，其邻接矩阵$A(G)$是一个实对称矩阵。
+根据\cref{thm:spectral-thm}，$A(G)$有一组特征向量构成的正交基。将$A(G)$的特征值从大到小排序，记为：
+$\alpha_1\ge\alpha_2\ge\dots\ge\alpha_n$。
+不同的图对应的$A(G)$具有不同的性质，下面看几个例子。
+
+\example 顶点个数为$n$的完全图记为$K_n$，其邻接矩阵为$A(K_n)=J-I$，
+其中$J$是全1的矩阵，$I$是单位阵。
+$J$的秩为1，唯一非零的特征值是$n$，对应的特征向量为全1向量。
+$I$的秩为$n$，对于$\R^{n\times n}$上的一组标准基向量，其特征值都是1。
+因此，$A(K_n)$有一个特征值为$n-1$，重数是1；另一个特征值为$-1$，重数是$n-1$。
+\subsection{二部性与特征值}
+
+\example 完全二部图$K_{p,q}$的特征值为$\{\sqrt{pq},0,\ldots,0,-\sqrt{pq}\}$。证明参见附录中的例\ref{eigenvalue of binary}。
+
+
+\example 对于二部图$G$，有以下两个引理，因此邻接矩阵的特征值可以用来判断一个图是否是二部图。
+
+\begin{lemma}\label{lem:bipartite-1}
+    如果图$G$是二部图，且$\alpha$是$A(G)$的其中一个特征值，则$-\alpha$一定也是其特征值，并且重数和$\alpha$相同。
+\end{lemma}
+
+\begin{proof}
+    二部图的邻接矩阵可以表示为$A(G)=\left(\begin{array}{cc}
+    0 & B \\
+    B^\top & 0
+    \end{array}\right)$。
+    假设$u=\left(\begin{array}{cc}
+    x \\
+    y
+    \end{array}\right)$是其中一个特征向量，对应的特征值为$\alpha$，则
+    \[
+    \left(\begin{array}{cc}
+    0 & B \\
+    B^\top & 0
+    \end{array}\right)
+    \left(\begin{array}{cc}
+    x \\
+    y
+    \end{array}\right)
+    =\alpha\left(\begin{array}{cc}
+    x \\
+    y
+    \end{array}\right)
+    \Longleftrightarrow
+    B^\top x=\alpha y\ \text{ 且 }\ By=\alpha x.
+    \]
+
+    再考虑向量$\left(\begin{array}{cc}
+    x \\
+    -y
+    \end{array}\right)$，有：
+    \[
+    \left(\begin{array}{cc}
+    0 & B \\
+    B^\top & 0
+    \end{array}\right)
+    \left(\begin{array}{cc}
+    x \\
+    -y
+    \end{array}\right)
+    =\left(\begin{array}{cc}
+    -By \\
+    B^\top x
+    \end{array}\right)
+    =\left(\begin{array}{cc}
+    -\alpha x \\
+    \alpha y
+    \end{array}\right)
+    =-\alpha\left(\begin{array}{cc}
+    x \\
+    -y
+    \end{array}\right).
+    \]
+
+    因此$\left(\begin{array}{cc}
+    x \\
+    -y
+    \end{array}\right)$
+    是矩阵$A(G)$的另一个特征向量，对应的特征值为$-\alpha$。
+    如果$\alpha$的重数为$k$，对应$k$个线性无关的特征向量，
+    那我们就可以类似地再构造$k$个线性无关的特征向量，使得它们的特征值为$-\alpha$。
+    因此$\alpha$和$-\alpha$的重数相同。
+\end{proof}
+
+\begin{lemma}\label{lem:bipartite-2}
+    给定图$G$，如果$A(G)$的特征值满足$\forall i,\ \alpha_i=-\alpha_{n-i+1}$，则$G$是一个二部图。
+\end{lemma}
+
+\begin{proof}
+    对于$A(G)$的任意一个特征向量$v$和对应的特征值$\alpha$，有$A(G)v=\alpha\cdot v$，因此$A^2(G)v=A(G)\cdot\alpha\cdot v=\alpha\cdot A(G)v=\alpha^2 v$。
+    以此类推，$A^k(G)v=\alpha^kv$，则$\alpha_1^k,\dots,\alpha_n^k$为$A^k(G)$的特征值。
+    
+    根据\cref{fact:trace}，$\Tr(A^k(G))=\sum_{i=1}^n\alpha_i^k$。
+    当$k$为奇数时，根据条件$\forall i,\ \alpha_i=-\alpha_{n-i+1}$，有$\sum_{i=1}^n\alpha_i^k=0$，所以$\Tr(A^k(G))=0$。
+    
+    另一方面，矩阵$A^k(G)$中，第$i$行第$j$列的元素$A^k(G)_{ij}$表示从顶点$i$到$j$走$k$步的路径条数；$A^k(G)_{ii}>0$表示存在包含$i$的长为$k$的圈。由于$A^k(G)$各元素都非负，$\Tr(A^k(G))\ge0$。
+    
+    图$G$是二部图的充要条件是图中没有奇圈。如果$G$不是二部图，图中存在奇圈，则$\Tr(A^k(G))>0$对于奇数$k$成立，与$\Tr(A^k(G))=0$矛盾。
+    
+    因此当$\forall i,\ \alpha_i=-\alpha_{n-i+1}$时，图$G$是一个二部图。
+\end{proof}
+
+结合\cref{lem:bipartite-1}和\cref{lem:bipartite-2}，容易得到以下判断二部图的充要条件：
+
+\begin{theorem}
+    图$G$是二部图，当且仅当$\forall i,\ \alpha_i=-\alpha_{n-i+1}$。
+\end{theorem}
+
+如果图$G$是连通图，判定二部图的条件更加简单。
+
+\begin{lemma}
+    连通图$G$是二部图，当且仅当$\alpha_1=-\alpha_n$。
+\end{lemma}
+\begin{proof}
+    \textbf{1)} $G$是连通的二部图$\Rightarrow\alpha_1=-\alpha_n$：
+    
+    首先当$G$是二部图的时候，根据\cref{lem:bipartite-1}，存在一个特征值$\alpha_i$满足$\alpha_i=-\alpha_1$。
+    因为$\alpha_1$是最大特征值，所以$-\alpha_1$是最小特征值，所以$\alpha_n=-\alpha_1$。
+
+    \textbf{2)} $G$连通且$\alpha_1=-\alpha_n\Rightarrow G$是二部图：
+    
+    当$\alpha_1=-\alpha_n$时，记$\alpha_n$对应的特征向量为$y$，假设$y$经过了归一化处理，
+    有：$y^\top y=1$。由于$\alpha_n\cdot y=Ay$，所以$y^\top Ay=\alpha_n\cdot y^\top y=\alpha_n$。
+    定义向量$z\in\R^n$：对任意的$i\in[n]$，$z_i=|y_i|$，易知$z$也是归一化的向量。则：
+    \[
+    |\alpha_n|=|y^\top Ay|\le\sum_{i,j}A_{ij}\cdot|y_i|\cdot |y_j|
+    =\sum_{i,j}A_{ij}\cdot z_i\cdot z_j
+    =z^\top Az\le\max_{x\in\R^n}\frac{x^\top Ax}{x^\top x}=\alpha_1
+    \]
+
+    因为$\alpha_1=-\alpha_n$，上式的每个不等号都取等，所以：
+    \begin{itemize}
+        \item $z^\top Az=\frac{z^\top Az}{z^\top z}=\max_{x\in\R^n}\frac{x^\top Ax}{x^\top x}=\alpha_1$，所以$z$是$\alpha_1$的特征向量
+        \item 对于所有的$i,j$，有$A_{ij}y_i\cdot y_j\le0$。对任意一条边$(i,j)\in E$，有$A_{ij}>0$，所以对应的$y_i\cdot y_j\le0$
+    \end{itemize}
+
+    如果我们假设$\forall i\in[n],\ z_i>0$，则对任意一条边$(i,j)\in E$，即$y_i$和$y_j$中恰好有一个是正数，有一个是负数。
+    那么集合$L=\{i:y_i<0\}$和$R=\{i:y_i>0\}$将$G$的顶点划分成两部分，且只有$L$和$R$之间有边，所以$G$是一个二分图。
+
+    下面用反证法证明$\forall i\in[n],\ z_i>0$。根据$z$的定义，$\forall i\in[n],\ z_i\ge0$，假设$z$中的某些元素等于0。
+    因为$z^\top z=1$，所以$z\neq0$；又因为图$G$是连通的，存在一条边$(i,k)\in E$使得$z_i=0$而$z_k\neq0$
+    （如果没有这样的边存在的话，$\{i:z_i=0\}$和$\{k:z_k\neq0\}$就会是图中的两个连通片，与连通性矛盾）。
+    因为有这样的边存在，所以$(Az)_i=\sum_{j\sim i}A_{ij}z_j\ge A_{ik}z_k>0$。
+    另一方面，由于$z_i=0$，$(Az)_i=\alpha_1 z_i=0$，矛盾。
+    所以假设不成立。因此，$\forall i\in[n],\ z_i>0$。
+\end{proof}
+\subsection{度数与特征值}
+\example 如果图$G$的最大度数是有限的，那么有以下引理。
+
+\begin{lemma}\label{lem:alpha1}
+    图$G$的最大度数记为$d$，则$A(G)$最大的特征值$\alpha_1$满足：$\alpha_1\le d$。
+\end{lemma}
+
+\begin{proof}
+    记第一特征值$\alpha_1$对应的特征向量为$v=(v_1,\dots,v_k)$，则$Av=\alpha_1\cdot v$。
+    假设向量$v$中，第$j$个元素$v_j$的值最大。考虑$\alpha_1\cdot v$的第$j$行，按照矩阵乘法的定义，有：
+    \[
+    (\alpha_1\cdot v)_j=(Av)_j=\sum_{k=1}^n A_{jk}\cdot v_k\le \sum_{k=1}^n A_{jk}\cdot v_j=\deg(j)\cdot v_j
+    \]
+
+    由于图中最大的度数是$d$，$\deg(j)\le d$，因此$(\alpha_1\cdot v_j)_j=\alpha_1\cdot v_j\le d\cdot v_j$，即$\alpha_1\le d$。
+\end{proof}
+
+\begin{lemma}
+    对于连通图$G$，如果$\alpha_1=d$，则$G$是$d$-正则图，即每个顶点都连着恰好$d$条边。
+\end{lemma}
+
+\begin{proof}
+    根据\cref{lem:alpha1}的证明，有：
+    \[
+    \alpha_1=\frac{(Av)_j}{v_j}=\frac{\sum_{i\sim j}v_i}{v_j}=\sum_{i\sim j}\frac{v_i}{v_j}
+    \le\sum_{i\sim j} 1=\deg(j)\le d
+    \]
+
+    其中$v$是$\alpha_1$对应的特征向量，对于所有的$i\in[n]$，$v_j\ge v_i$，$i\sim j$表示边$(i,j)\in E$。
+    由于$\alpha_1=d$，上式取等，因此$\deg(j)=d$，且对于所有与$j$相邻的点$i$，都有$v_i=v_j$；同理，对于所有$j$的邻点$i$，都有$\deg(i)=d$。
+    由于图$G$连通，我们可以从$j$的邻点出发，继续运用这个技巧，直到对所有的$i\in[n]$，都有$v_i=v_j$且$\deg(i)=d$。
+\end{proof}
+
+邻接矩阵$A(G)$的最大特征值$\alpha_1$除了关于$d$有一个上界，还有一个关于平均度数的下界，由以下引理给出。
+直观上来说，$\alpha_1$的下界是最稠密的子图$S$的平均度数。
+
+\begin{lemma}
+    给定图$G=(V,E)$。对于顶点集合$S\subseteq V$，定义$\deg_S(v):=|\{u|uv\in E\text{ 且 }u\in S\}|$
+    为$v$的邻居与$S$的交集。则$A(G)$的最大特征值$\alpha_1$满足：
+    \[
+    \alpha_1\ge\max_{S\subseteq V}\frac{1}{|S|}\sum_{v\in S}\deg_S(v).
+    \]
+\end{lemma}
+
+\begin{proof}
+    对于任意一个顶点集合$S\subseteq V$，根据\cref{lem:rayleigh}，$\alpha_1=\max_{x\in\R^n}\frac{x^\top Ax}{x^\top x}\ge\frac{\chi_S^\top A\chi_S}{\chi_S^\top \chi_S}$。
+    其中，$\chi_S\in\R^n$是集合$S$的示性变量：对于任意顶点$i\in[n]$，如果$i\in S$，$\chi_S(i)=1$；否则$\chi_S(i)=0$。
+
+    又因为$\chi_S^\top A\chi_S=\sum_{v\in S}\deg_S(v)$，$\chi_S^\top \chi_S=|S|$，
+    所以对任意$S\subseteq V$，都有$\alpha_1\ge\frac{1}{|S|}\sum_{v\in S}\deg_S(v)$，则原命题得证。
+\end{proof}
+
+
+\begin{corollary}
+    矩阵$A(G)$最大的特征值$\alpha_1$满足$\alpha_1\ge\omega(G)-1$。
+    其中$\omega(G)$是图$G$最大的团（clique）的顶点数量。
+    团是图中的一个子图，且是完全图。
+\end{corollary}
+
+$\alpha_1$还满足其他性质：
+\begin{itemize}
+    \item 根据Perron-Frobenius定理（参见附录中的\cref{thm:PF}），连通图的$\alpha_1$的重数为1
+    \item $d\ge\alpha_1\ge\alpha_2\ge\dots\ge\alpha_n\ge-d$
+    % \item $\alpha_1$不能由一个简单的图结构来刻画
+\end{itemize}
+
+
+
+
+
+\section{拉普拉斯矩阵（Laplacian Matrix）}
+
+对于无向图$G$，其邻接矩阵是$A(G)$，度数矩阵是$D(G)$，定义拉普拉斯矩阵为$L(G):=D(G)-A(G)$。
+将$L(G)$的特征值从小到大排序，记为：$\lambda_1\le\dots\le\lambda_n$。
+（与之对比的是，邻接矩阵的特征值按从大到小的顺序是$\alpha_1\ge\dots\ge\alpha_n$）。
+
+\example 对于$d$-正则的图，每个顶点的度数都是$d$，因此$D(G)=dI_n$，
+则$L=dI_n-A$，第$i$个特征值为$\lambda_i=d-\alpha_i$。
+
+对于一般的非正则图，邻接矩阵 $A$ 与拉普拉斯矩阵 $L$ 不再有如上这样简单的特征值对应关系；然而，不论图是否正则，拉普拉斯矩阵的最小特征值始终满足 $\lambda_1=0$。
+
+\begin{definition}[（带符号的）关联矩阵]\label{def:incidence}
+    给定图$G=(V,E)$，其中$V=[n]$，$|E|=m$。对于每一条边$e=ij\in E$，定义向量$\mathbf{b}_e\in\R^n$：
+    第$i$个元素为$+1$，第$j$个元素为$-1$，其余元素为0.
+    令矩阵$B(G)$的大小为$n\times m$，列向量为$\{\mathbf{b}_e\}_{e\in E}$。
+\end{definition}
+
+\begin{lemma}
+    图$G$的拉普拉斯矩阵$L(G)$是半正定矩阵，且$\lambda_1=0$，对应的特征向量为$\vec{1}$.
+\end{lemma}
+
+\begin{proof}
+    先假设图$G_e$只包含$e=ij$这一条边，记$C:=\mathbf{b}_e \mathbf{b}_e^\top$，那么$C_{ii}=1,\ C_{ij}=-1,\ C_{ji}=-1, C_{jj}=1$，其余元素都为0；
+    $D(G_e)$中，$D(G_e)_{ii}=D(G_e)_{jj}=1$，其余元素都为0；$A(G_e)$中，$A(G_e)_{ij}=A(G_e)_{ji}=1$，其余元素都为0。
+    因此，$L(G_e)=D(G_e)-A(G_e)=C=\mathbf{b}_e \mathbf{b}_e^\top$。
+
+    对于一般的简单图$G$，边集为$E$，有$L=\sum_{e\in E}\mathbf{b}_e \mathbf{b}_e^\top$，因为任意一条边$e=ij\in E$对应的$\mathbf{b}_e \mathbf{b}_e^\top$
+    都为$L_{ii}$和$L_{jj}$贡献1，为$L_{ij}$和$L_{ji}$贡献-1。因此，有
+    \[
+    L=\sum_{e\in E}\mathbf{b}_e \mathbf{b}_e^\top=BB^\top
+    \]
+
+    对任意向量$x\in \R^n$，有$x^\top Lx=x^\top BB^\top x=<x^\top B,x^\top B>=\Vert x^\top B\Vert_2^2\ge0$，因此$L$是半正定矩阵。
+
+    考虑$L\vec{1}$的第$i$个元素，$(L\vec{1})_i=(D-A)_i\cdot\vec{1}=\deg(i)-\sum_{j\in N(i)}1=0$，所以$L\vec{1}=0=0\cdot\vec{1}$。
+    因此，$\lambda_1=0$，对应的特征向量为$\vec{1}$。
+\end{proof}
+
+\begin{lemma}[拉普拉斯矩阵的二次型]
+\label{lem:laplace_quardratic_form}
+    对于任意的向量$x\in\rspace{n}$，$G$的拉普拉斯矩阵$L$的二次型有如下形式：
+    \[x^{\top}Lx=\sum_{(i,j)\in E}(x_i-x_j)^2\]
+\end{lemma}
+\begin{proof}
+    \[x^{\top}Lx=\sum_{e}x^{\top}b_e^{\top}b_ex=\sum_{(i,j)\in E}(x_i-x_j)^2\]
+\end{proof}
+当$x$取点集$S$的指示向量$\chi_S$（即$(\chi_S)_i=1$当且仅当$i\in S$），有$\qf{\chi_S}{L}=\abs{\delta(S)}$。其中$\delta(S)=E(S,V\setminus S)$为$(S,V\setminus S)$的割集。
+
+\begin{lemma}
+\label{lem:lambda_connectivity}
+    设$L$的特征值为$\lambda_1\leq\dots\leq\lambda_n$，那么，
+    $G$是连通图$\Leftrightarrow$ $\lambda_2>0$。
+\end{lemma}
+\begin{proof}
+\textbf{1) $G$是连通图$\Leftarrow$ $\lambda_2>0$：}
+
+反证，假设$G$不是连通图，设两个连通片对应的点集为$S_1$和$S_2$。那么有：
+
+\[L=D-A=\left(\begin{array}{cc}
+    D_1-A_1 & 0 \\
+    0 & D_2-A_2
+\end{array}\right)=\left(\begin{array}{cc}
+    L_1 & 0 \\
+    0 & L_2
+\end{array}\right)\]
+
+由$L_1\chi_{S_1}=0$与$L_2\chi_{S_2}=0$，$\left(\begin{array}{cc}
+     \chi_{S_1}\\
+     0 
+\end{array}\right)$ 和 $\left(\begin{array}{cc}
+     0\\
+     \chi_{S_2}
+\end{array}\right)$是$L$的两个不相关的特征向量，对应的特征值为$0$。所以$L$的$0$特征值的重数至少为$2$，即$\lambda_2=0$。与$\lambda_2>0$矛盾，因此由反证法，$G$是连通图。
+
+\textbf{2) $G$是连通图$\Rightarrow$ $\lambda_2>0$：}
+
+满足$Lx=0$的向量需要满足$0=\qf{x}{L}=\sum_{(i,j)\in E}(x_i-x_j)^2$，所以对于任意的$(i,j)\in E$，有$x_i=x_j$。又由$G$为连通图，可得$x=c\cdot\overrightarrow{1}$。即$L$的$0$特征值的重数为$1$，即$\lambda_2>0$。
+\end{proof}
+这个引理还可以进一步加强：$L(G)$的$0$特征值的重数等于$G$的连通片的个数。证明留给读者作为习题。
+
+\subsection{Cayley 公式与矩阵树定理}
+
+\begin{theorem}[Cayley 公式]\label{thm:cayley}
+在 $n$ 个顶点上的带标签树共有 $n^{\,n-2}$ 棵。
+\end{theorem}
+
+本节给出 Cayley 公式的一个证明，利用图的生成树计数的一个一般性定理。
+注意：带标签树的数量等于完全图 $K_n$ 的生成树个数。
+
+设 $G$ 是顶点集为 $[n]$ 的连通简单图，记其生成树数量为 $t(G)$。下面叙述著名的
+\emph{Kirchhoff 矩阵树定理}。
+
+回忆$B$ 为图 $G$ 的（带符号的）关联矩阵（见\Cref{def:incidence})。且
+\[
+L = B B^{\mathsf T},
+\]
+为Laplacian矩阵。
+
+\begin{theorem}[矩阵树定理]\label{thm:matrix-tree}
+对任意 $i\in[n]$，删除矩阵 $M:=L$ 中的第 $i$ 行与第 $i$ 列得到 $M_{ii}$，则
+\[
+t(G)=\det(M_{ii}).
+\]
+\end{theorem}
+%\pnote{特征值？？}
+
+证明依赖 Binet--Cauchy 定理, 后者的完整证明在此略去. 读者可以参考文献( Joel G. Broida and S. Gill Williamson (1989) A Comprehensive Introduction to Linear Algebra, §4.6 Cauchy-Binet theorem) 以了解证明细节.
+
+\begin{theorem}[Binet--Cauchy]\label{thm:binet-cauchy}
+若 $P$ 为 $r\times s$ 矩阵，$Q$ 为 $s\times r$ 矩阵，且 $r\le s$，则
+\[
+\det(PQ)=\sum_{Z} (\det P_Z)(\det Q_Z),
+\]
+其中 $Z$ 遍历所有大小为 $r$ 的子集 $Z\subseteq [s]$；
+$P_Z$ 为 $P$ 取列集 $Z$ 后所得的 $r\times r$ 子矩阵；
+$Q_Z$ 为 $Q$ 取行集 $Z$ 后所得的 $r\times r$ 子矩阵。
+\end{theorem}
+
+\begin{proof}[\Cref{thm:matrix-tree} 矩阵树定理的证明]
+注意到矩阵 $B$ 至少有 $n-1$ 列，因为连通图 $G$ 至少有 $n-1$ 条边。
+因此我们可以将定理 9.3 应用于 $M_{ii}$，得到
+\[
+\det M_{ii}
+  = \sum_{N} \det N \cdot \det N^{\mathsf T}
+  = \sum_{N} (\det N)^2,
+\]
+其中 $N$ 遍历所有从 $B$ 删除第 $i$ 行所得的 $(n-1)\times(n-1)$ 子矩阵。
+
+矩阵 $N$ 的 $n-1$ 列对应于图 $G$ 的一个含 $n$ 个顶点、$n-1$ 条边的子图。
+我们需要证明
+\[
+\det N =
+\begin{cases}
+\pm 1, & \text{若这些边构成一棵树；}\\[4pt]
+0,     & \text{否则。}
+\end{cases}
+\]
+
+{(1) 若 $n-1$ 条边不构成树。}
+此时必定存在一个连通分支不含顶点 $i$。该分支对应的若干行相加为 $0$，
+因此这些行线性相关，从而 $\det N = 0$。
+
+{(2) 若 $n-1$ 条边构成一棵树。}
+此时存在一个度为 $1$ 的顶点 $j_1\neq i$，记 $e_1$ 为其唯一邻边。
+删除 $j_1$ 和 $e_1$ 后得到含 $n-2$ 条边的树。
+重复此过程，得到顶点序列 $j_1,\dots,j_{n-1}$ 及对应边 $e_1,\dots,e_{n-1}$，
+满足 $j_k \in e_k$。
+
+对 $N$ 的行与列同时重新排序，使得第 $k$ 行对应顶点 $j_k$，
+第 $k$ 列对应边 $e_k$。由于对任意 $k<\ell$，顶点 $j_k$ 不属于边 $e_\ell$，
+可知新矩阵 $N'$ 为下三角矩阵，且主对角线元素均为 $\pm 1$。
+
+因此
+\[
+\det N = \pm \det N^\top = \pm 1.
+\]
+\end{proof}
+
+\subsubsection{\Cref{thm:cayley}Cayley 公式的一个证明}
+
+对完全图 $K_n$，矩阵 $M:=L$ 为
+\[
+M=\begin{pmatrix}
+n-1 & -1 & \cdots & -1\\
+-1 & n-1 & \cdots & -1\\
+\vdots & \vdots & \ddots & \vdots\\
+-1 & -1 & \cdots & n-1
+\end{pmatrix}.
+\]
+
+其任一 $(n-1)\times(n-1)$ 主子矩阵 $M_{ii}$ 具有相同结构。
+
+先把所有列加到第一列：
+\[
+\det M_{ii}
+=\det
+\begin{pmatrix}
+1 & -1 & \cdots & -1\\
+1 & n-1 & \cdots & -1\\
+\vdots & \vdots & \ddots & \vdots\\
+1 & -1 & \cdots & n-1
+\end{pmatrix}.
+\]
+
+再把第一列加到其它所有列：
+\[
+\det M_{ii}
+=\det
+\begin{pmatrix}
+1 & 0 & \cdots & 0\\
+1 & n & \cdots & 0\\
+\vdots & \vdots & \ddots & \vdots\\
+1 & 0 & \cdots & n
+\end{pmatrix}.
+\]
+
+该矩阵为下三角矩阵，故
+\[
+\det M_{ii}=n^{\,n-2}.
+\]
+
+由矩阵树定理即得 Cayley 公式。
+
+\subsubsection{$t(G)$与特征值的联系}
+\begin{theorem}\label{thm:laplacian-tree}
+设图 $G$ 的拉普拉斯矩阵 $L_G$ 的特征值按非减顺序排列为
+\[
+0=\lambda_1 \le \lambda_2 \le \cdots \le \lambda_n.
+\]
+则
+\[
+t(G)=\frac{1}{n}\prod_{i=2}^n \lambda_i,
+\]
+其中 $t(G)$ 为 $G$ 的生成树个数。
+\end{theorem}
+
+\begin{proof}
+若 $G$ 不连通，则 $\lambda_2=0$，且 $t(G)=0$，定理显然成立。下面假设 $G$ 连通。
+
+我们将从两个角度计算拉普拉斯矩阵的特征多项式的线性项。首先，
+\[
+\det(\lambda I - L_G)
+=(\lambda-\lambda_1)(\lambda-\lambda_2)\cdots(\lambda-\lambda_n)
+=\lambda(\lambda-\lambda_2)\cdots(\lambda-\lambda_n),
+\]
+因此其 $\lambda$ 的一次项为
+\[
+(-1)^{\,n-1}\prod_{i=2}^n \lambda_i.
+\tag{1}
+\]
+
+另一方面，由特征多项式的定义，
+\[
+\det(\lambda I - L_G)=\det(A+B),
+\]
+其中 $A=\lambda I$，$B=-L_G$。我们将使用以下恒等式(参见文献 (Christopher D. Godsil and Gordon F. Royle. Algebraic Graph Theory 13.2))：
+
+\[
+\det(A+B)=\sum_{S\subseteq[n]} \det A_S,
+\]
+其中 $A_S$ 表示将矩阵 $A$ 中由 $S$ 索引的行替换为矩阵 $B$ 中对应行而得的矩阵。
+
+对本例，线性项仅来自满足 $|S|=n-1$ 的项，因此如果令$M=L_G$，
+\[
+\text{（线性项）}=\sum_{\substack{S\subseteq[n]\\ |S|=n-1}}
+\det(\,\lambda I\,)_S
+= (-1)^{n-1}\sum_{i=1}^n \det M_{ii},
+\]
+其中 $M_{ii}$ 表示删除第 $i$ 行和第 $i$ 列的主子式。
+
+由矩阵树定理（Kirchhoff 定理）可知 $\det M_{II}=t(G)$ 对所有 $i$ 都相同，于是
+\[
+\text{（线性项）}=(-1)^{n-1}\cdot n\cdot t(G).
+\tag{2}
+\]
+
+将(1)与(2)相等即可得
+\[
+(-1)^{n-1}\prod_{i=2}^n \lambda_i
+=
+(-1)^{n-1} n\,t(G),
+\]
+从而
+\[
+t(G)=\frac{1}{n}\prod_{i=2}^n \lambda_i.
+\]
+证毕。
+\end{proof}
+
+
+
+
+
+\section{正则化的邻接矩阵与拉普拉斯矩阵}
+由于拉普拉斯矩阵会引入与最大度数$d$的依赖，人们更常考虑正则化的邻接矩阵与拉普拉斯矩阵。这也可以帮助我们获得形式更简洁的Cheeger不等式（\Cref{thm:cheeger}）。
+
+\begin{definition}[正则化的邻接矩阵与拉普拉斯矩阵]
+    给定图$G$，其正则化的邻接矩阵定义为$\NA=D^{-1/2}AD^{-1/2}$，正则化的拉普拉斯矩阵定义为$\NL=D^{-1/2}LD^{-1/2}$。
+\end{definition}
+
+类似于之前地，我们通常分别用$\alpha_1\geq\dots\geq\alpha_n$与$\lambda_1\leq\dots\leq\lambda_n$表示$\NA$与$\NL$的特征值。由定义可得$\lambda_i=1-\alpha_i$。$\NA$与$\NL$的特征值都是有界的：
+
+\begin{lemma}
+    $1=\alpha_1\geq\alpha_n\geq-1$且$0=\lambda_1\leq\lambda_n\leq2$
+\end{lemma}
+\begin{proof}
+\textbf{1) $1=\alpha_1$：}
+    
+由于$L$是半正定的，所以$\NL$是半正定的，所以$\lambda_1\geq0$。又因为$\overrightarrow{1}$是$L$的$0$特征值对应的特征向量，所以$D^{1/2}\overrightarrow{1}$也是$\NL$的特征向量，对应的特征值为$0$。所以$\lambda_1=0$，即$\alpha_1=1$。
+
+\textbf{2) $\alpha_1\geq-1$：}
+
+令$\overline{B}_{v,e}=\abs{B_{v,e}}$，有$(\overline{B}\times\overline{B}^{\top})_{i,j}=\sum_{e\in E}\mathbf{1}_{i,j\text{与$e$邻接}}=\begin{cases}
+    \deg(i)\text{, 如果$i=j$}\\
+    1\text{，如果$(i,j)\in E$}
+\end{cases}=(D+A)_{i,j}$，所以$D+A=\overline{B}\times\overline{B}^{\top}$。所以，$D+A$是半正定的。因此，$I+\NA$是半正定的，有$1+\alpha_n\geq0$，即$\alpha_1\geq-1$。
+\end{proof}
+
+\subsection{Cheeger不等式}
+
+\Cref{lem:lambda_connectivity}研究了图的$\lambda_2$特征值与连通性的关系。由于不连通的图最小割为$0$，因此，也可以理解成$\lambda_2$特征值与图的最小割的关系。Cheeger不等式可以理解成该引理的一个推广，粗糙地说，它表明了当$\lambda_2$比较大时，图的最小割也会比较大。具体来说，它研究了$\lambda_2$特征值与导率之间的关系。
+
+\begin{definition}[导率（conductance）]
+    给定图$G$，子集$S\subset V$的导率被定义为：
+    \[\phi(S)=\frac{\abs{\delta(S)}}{\vol(S)},\]
+    其中，$S$的体积被定义为$\vol(S)=\sum_{v\in S}\deg(v)$。
+
+    进一步地，图$G$的导率被定义为\[\phi(G)=\min_{\vol(S)\leq\frac{\vol(V)}{2}=\abs{E}}\phi(S).\]
+\end{definition}
+
+% 黎曼几何中，曾有人研究过周长/体积
+直观上，$S$的导率可以理解成$S$中的点进行随机游走后，游走到$S$外的概率。当$(S,V\setminus S)$中的边数越多，$S$内部的边越少（$\vol(S)=\abs{\delta(S)}+2\abs{(S,S)}$），$S$中的点就越容易随机游走到$S$外。如果图$G$的大部分割的导率都比较大，直观上点在$G$上做随机游走可以轻易得到达任意地方，即导通性比较好，比较容易扩散。
+
+Cheeger不等式刻画了$\lambda_2$与$\phi(G)$的关系：
+
+\begin{theorem}[Cheeger不等式]
+\label{thm:cheeger}
+    $\frac{\lambda_2}{2}\leq\phi(G)\leq\sqrt{2\lambda_2}$
+\end{theorem}
+
+% 该定理的证明需要用到线性代数中的如下概念与引理：
+
+% \begin{definition}[Rayleigh商]
+%     对称矩阵$M$与非零向量$x$的Rayleigh商定义为：
+%     \[R(M,x)=\frac{\qf{x}{M}}{\qf{x}{}}\]
+% \end{definition}
+
+% \begin{lemma}
+% \label{lem:rayleigh}
+%     设对称矩阵$M\in\rspace{n\times n}$的特征值为$\lambda_1\leq\dots\leq\lambda_n$，对应的特征向量为$v_1,\dots,v_n$，则：
+%     \[v_i=\min_{x\perp\mathrm{span}\{v_{1},\dots,v_{i-1}\}}\frac{\qf{x}{M}}{\qf{x}{}}\]
+% \end{lemma}
+
+\begin{proof}[Proof of \Cref{thm:cheeger}]
+\textbf{1) 左边：}
+由于$\NL$的$0$特征值对应的特征向量为$D^{1/2}\overrightarrow{1}$，由\Cref{lem:rayleigh}，有$\lambda_2=\min_{x\perp\mathrm{span}(D^{1/2}\overrightarrow{1})}\frac{x^{\top}\NL x}{x^{\top}x}$。其中，$x\perp\mathrm{span}(D^{1/2}\overrightarrow{1})$等价于$\sum_{i=1}^n\sqrt{\deg(i)}x_i=0$。类似于\Cref{lem:laplace_quardratic_form}，有$\qf{x}{\NL}=\sum_{(i,j)\in E}(\frac{x_i}{\sqrt{\deg(i)}}-\frac{x_j}{\sqrt{\deg(j)}})^2$。令$x_i'=\frac{x_i}{\sqrt{\deg(i)}}$，所以有\[\lambda_2=\min_{\sum_{i=1}^n\sqrt{\deg(i)}x_i=0}\frac{\sum_{(i,j)\in E}(\frac{x_i}{\sqrt{\deg(i)}}-\frac{x_j}{\sqrt{\deg(j)}})^2}{\sum_{i}x_i^2}=\min_{\sum_{i=1}^n\deg(i)x_i'=0}\frac{\sum_{(i,j)\in E}(x_i'-x_j')^2}{\sum_{i}\deg(i)x_i'^2}.\]
+
+由于$\vol(S)=\sum_{i}\deg(i)(\chi_S)_i^2$，因此，$\phi(G)$也可以表示为类似的形式：\[\phi(G)=\min_{\vol(S)\leq\abs{E}}\frac{\abs{\delta(S)}}{\vol(S)}=\min_{x\in\{0,1\}^n:\sum\deg(i)x_i^2\leq\abs{E}}\frac{\sum_{(i,j)\in E}(x_i-x_j)^2}{\sum_i{\deg(i)x_i^2}}.\]
+
+不妨假设$T=\argmin_{\vol(S)\leq\abs{E}}\phi(S)$，并令$z_i=\begin{cases}
+    \frac{1}{\vol(T)}, i\in T\\
+    -\frac{1}{\vol(V\setminus T)}, i\notin T
+\end{cases}$，则容易验证，$\sum_i^n\deg(i)z_i=0$，所以$\lambda_2\leq\frac{\sum_{(i,j)\in E}(z_i-z_j)^2}{\sum_{i}\deg(i)z_i^2}$。由$\vol(T)\leq\frac{\vol(V)}{2}$，有$\vol(T)\leq\vol(V\setminus T)$。又由$\sum_{(i,j)\in E}(z_i-z_j)^2=\sum_{(i,j)\in\delta(T)}(\frac{1}{\vol(T)}-\frac{1}{\vol(V\setminus T)})^2$，所以
+
+\begin{align*}
+    \lambda_2
+    &\leq\frac{\sum_{(i,j)\in E}(z_i-z_j)^2}{\sum_{i}\deg(i)z_i^2}\\
+    &=\frac{\sum_{(i,j)\in\delta(T)}(\frac{1}{\vol(T)}+\frac{1}{\vol(V\setminus T)})^2}{\sum_{i\in T}\deg(i)\frac{1}{\vol^2(T)}+\sum_{i\in V\setminus T}\deg(i)\frac{1}{\vol^2(V\setminus T)}}\\
+    &=\frac{\abs{\delta(T)}}{(\frac{1}{\vol(T)}+\frac{1}{\vol(V\setminus T)})\frac{\vol^2(T)\vol^2(V\setminus T)}{(\vol(T)+\vol(V\setminus T))^2}}\\
+    &=\frac{\abs{\delta(T)}}{\frac{\vol(T)\vol(V\setminus T)}{\vol(T)+\vol(V\setminus T)}}\\
+    &=\phi(T)\cdot\frac{\vol(T)+\vol(V\setminus T)}{\vol(V\setminus T)}\\
+    &\leq2\phi(G).
+\end{align*}
+
+\textbf{2) 右边：}
+由$\phi(G)$的定义，只要找到$S$使得$\phi(S)\leq\sqrt{2\lambda_2}$即可。
+
+由于$\lambda_2=\min_{\sum_{i=1}^n\deg(i)x_i=0}\frac{\sum_{(i,j)\in E}(x_i-x_j)^2}{\sum_{i}\deg(i)x_i^2}$，不妨设$u$是使$\frac{\sum_{(i,j)\in E}(x_i-x_j)^2}{\sum_{i}\deg(i)x_i^2}$最小的满足$\sum_{i=1}^n\deg(i)x_i=0$的向量，类似前面的推导，容易知道$D^{1/2}u$即为$\NL$的$\lambda_2$特征值的特征向量。我们准备从$u$出发，逐步求出一个使得$\phi(S)$尽量小的集合$S$。因此，需要将$u$舍入(rounding)为一个满足体积小于$\abs{E}$的顶点集的示性变量。
+
+由于$\vol(\{i:u_i>0\})+\vol(\{i:u_i<0\})\leq\sum_i\deg(i)=2\abs{E}$，不妨假设$\vol(\{i:u_i>0\})\leq\abs{E}$。令$(u^+)_i=\begin{cases}
+    u_i,u_i>0\\
+    0,u_i<0
+\end{cases}$。令$u^-=u^+-u$。下面证明$u^+$是一个好的中间选择，即不会使得瑞利商变大：
+
+% 因为$\sum_{i=1}^n\deg(i)u_i=0$，所以，$\sum_{i=1}^n\deg(i)u_i^+=\sum_{i=1}^n\deg(i)u_i^-$。
+由于$D^{1/2}u$是$\NL$的$\lambda_2$特征值的特征向量，有$\NL D^{1/2}u=\lambda_2D^{1/2}u$，因此有：
+
+\begin{align*}
+    \frac{1}{\deg(i)}\sum_{j}(u_i-u_j)&=u_i-\sum_j\frac{u_j}{\deg(i)}\\
+    &=\frac{1}{\sqrt{\deg(i)}}\left((I-D^{-1/2}AD^{-1/2})D^{1/2}u\right)_i\\
+    &=\frac{1}{\sqrt{\deg(i)}}\left(\lambda_2 D^{1/2}u\right)_i\\
+    &=\lambda_2u_i
+\end{align*}
+
+所以有：
+
+\begin{align*}
+    \frac{\sum_{(i,j)\in E}(u^+_i-u^+_j)^2}{\sum_{i}\deg(i)(u^+_i)^2}&=\frac{\sum_{i}u^+_i\sum_j(u^+_i-u^+_j)}{\sum_{i}\deg(i)(u^+_i)^2}\\
+    &\leq\frac{\sum_{i\in\{i:u_i>0\}}u_i\sum_j(u_i-u_j)}{\sum_{i}\deg(i)(u^+_i)^2}\\
+    &\leq\frac{\sum_{i\in\{i:u_i>0\}}u_i\lambda_2\deg(i)u_i}{\sum_{i}\deg(i)(u^+_i)^2}\\
+    &=\lambda_2=\frac{\sum_{(i,j)\in E}(u_i-u_j)^2}{\sum_{i}\deg(i)(u_i)^2}
+\end{align*}
+
+为了将$u^+$进一步舍入为指示变量，我们采用如下的方法：定义$S_t=\{i:(u^+_i)^2\geq t\}$，为了证明存在一个$\{i:u_i>0\}$的子集$S_t$，使得$\phi(S_t)=\frac{\abs{\delta(S_t)}}{\vol(S_t)}\leq\sqrt{2\lambda_2}$，我们只需证明：当我们均匀随机地选择$t\in[0,1]$时，$\E[\phi(S_t)]\leq\sqrt{2\lambda_2}$即可。
+
+\begin{align*}
+    \E[\abs{\delta(S_t)}]&=\sum_{(i,j)\in E}\Pr[(i,j)\in(S_t,V\setminus S_t)]\\
+    &=\sum_{(i,j)\in E}\Pr[(u^+_i)^2\leq t\leq (u_j^+)^2\text{or}(u^+_j)^2\leq t\leq (u_i^+)^2]\\
+    &=\sum_{(i,j)\in E}\abs{\int_{(u_i^+)^2}^{(u_j^+)^2}1dt}\\
+    &=\sum_{(i,j)\in E}\abs{(u_i^+)^2-(u_j^+)^2}\\
+    &=\sum_{(i,j)\in E}\abs{u_i^+-u_j^+}\abs{u_i^++u_j^+}\\
+    &\leq\sqrt{\sum_{(i,j)\in E}(u_i^+-u_j^+)^2\sum_{(i,j)\in E}(u_i^++u_j^+)^2}&&\text{(Cauchy-Schwarz不等式)}\\
+    &\leq\sqrt{\sum_{(i,j)\in E}(u_i^+-u_j^+)^2\sum_{(i,j)\in E}(2(u_i^+)^2+2(u_j^+)^2)}&&\text{(均值不等式)}\\
+    &=\sqrt{\sum_{(i,j)\in E}(u_i^+-u_j^+)^2\cdot2\sum_{i}\deg(i)(u_i^+)^2}\\
+    &=\sqrt{\frac{\sum_{(i,j)\in E}(u^+_i-u^+_j)^2}{\sum_{i}\deg(i)(u^+_i)^2}}\cdot\sqrt{2}\sum_{i}\deg(i)(u_i^+)^2\\
+    &\leq\sqrt{2\lambda_2}\sum_{i}\deg(i)(u_i^+)^2
+\end{align*}
+
+\begin{align*}
+    \E[\vol(S_t)]&=\int_0^1\sum_{i}\deg(i)\Pr[(u^+_i)^2\geq t]dt\\
+    &=\sum_{i}\deg(i)(u^+_i)^2
+\end{align*}
+
+所以$\frac{\abs{\E{\abs{\delta(S)}}}}{\E[\vol(S_t)]}\leq\sqrt{2\lambda_2}$。假设对于任意的$t\in[0,1]$，均有$\abs{\delta(S_t)}>\sqrt{2\lambda_2}\vol(S_t)$，则有$\frac{\E{\abs{\delta(S)}}}{\E[\vol(S_t)]}>\frac{\E{\sqrt{2\lambda_2}\vol(S_t)}}{\E[\vol(S_t)]}=\sqrt{2\lambda_2}$。矛盾！所以，一定存在$t\in[0,1]$使得$\abs{\delta(S_t)}\leq\sqrt{2\lambda_2}\vol(S_t)$，即$\phi(S_t)\leq\sqrt{2\lambda_2}$。又由$\vol(S_t)\leq\vol(\{i:u_i>0\})\leq\abs{E}$，所以，$\phi(G)\leq\phi(S_t)\leq\sqrt{2\lambda_2}$。
+
+\end{proof}
+
+\subsection{Cheeger不等式的应用}
+
+Cheeger不等式在图论和数据分析中有着广泛的应用，其核心思想是将图的几何性质（如切割问题）与谱性质（拉普拉斯矩阵的特征值）联系起来。具体应用场景如下：
+
+\subsection{Cheeger不等式的应用}
+
+\subsubsection{谱划分（Spectral Clustering）}
+这是最经典的应用，步骤如下：
+\begin{enumerate}
+    \item \textbf{建图}：数据点 $\{v_1, v_2, \dots, v_n\}$ 根据距离阈值或相似度构建图 $G$（如 $k$-近邻或高斯核相似度）。
+    \item \textbf{计算拉普拉斯矩阵}：通常使用归一化拉普拉斯矩阵 $L = I - D^{-1/2} A D^{-1/2}$。
+    \item \textbf{求第二小特征向量}：计算对应第二小特征值 $\lambda_2$ 的特征向量 $u_2$。
+    \item \textbf{Sweep操作}：
+    \begin{itemize}
+        \item 将 $u_2$ 的分量按值排序，依次尝试以每个分量为阈值将图划分为两个集合 $S_t$。
+        \item 计算每个划分的\textbf{导率（Conductance）} $\phi(S_t) = \frac{|E(S_t, \bar{S_t})|}{\min(\text{vol}(S_t), \text{vol}(\bar{S_t}))}$，其中 $\text{vol}(S_t)$ 是 $S_t$ 中点的度数和。
+        \item 选择导率最小的划分作为最终结果。
+    \end{itemize}
+\end{enumerate}
+
+\textbf{理论保证}：Cheeger不等式给出了谱划分的近似比：
+\[
+\frac{\lambda_2}{2} \leq \phi_{\min} \leq \sqrt{2\lambda_2},
+\]
+其中 $\phi_{\min}$ 是最优导率。这意味着 $\lambda_2$ 小则图存在稀疏切割，而通过 $u_2$ 得到的划分至少是最优解的近似。关于谱聚类的详细教程可参考相关文献\footnote{Ulrike von Luxburg. \href{https://arxiv.org/abs/0711.0189}{A Tutorial on Spectral Clustering}.\textit{Statistics and Computing}, 17(4):395–416, 2007.} 
+
+以下是Cheeger不等式的其他应用：\begin{itemize}
+    \item 在图像分割中，将图像视为图：节点为像素点，边权重基于像素间颜色/纹理相似度。归一化拉普拉斯矩阵的特征向量能捕捉图像的整体结构，通过谱划分可实现鲁棒的分割效果，适用于纹理复杂或边界模糊的图像。
+    \item 在文本分析中，文档集合可表示为相似度图，谱划分能发现潜在的主题群落。在社交网络中，节点代表用户，边代表互动关系，谱方法通过计算特征向量快速得到近似最优的社区划分，避免了NP-hard问题的精确求解。该方法还可应用于推荐系统中的用户-商品二分图划分。
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+\iffalse
+\fi
+\section*{附录}
+\appendix
+\section{一些数学证明}
+
+\begin{fact}[莱布尼兹公式]\label{fact:det}
+    $A$是一个$n\times n$的矩阵，其行列式定义为：
+    \[
+    \det(A)=\sum_{\sigma\in S_n}\sgn(\sigma)\prod_{i=1}^n A_{\sigma(i),i},
+    \]
+    其中$S_n$是集合$[n]=\{1,\dots,n\}$上置换的全体，即集合$\{1,\dots,n\}$到自身的一一映射的全体；
+    $\sgn(\sigma)$表示置换$\sigma$的符号差：具体来说，满足$1\le i\le j\le n$但$\sigma(i)>\sigma(j)$的有序数对$(i,j)$称为$\sigma$的一个逆序。
+    如果$\sigma$的逆序共有偶数个，则$\sgn(\sigma)=+1$；如果共有奇数个，$\sgn(\sigma)=-1$。
+\end{fact}
+
+\example 完全二部图$K_{p,q}$的特征值。
+\label{eigenvalue of binary}
+记$K_{p,q}$的顶点集合为$V=L\cup R$，其中$|L|=p$，$|R|=q$。
+其邻接矩阵$A(K_{p,q})$可以写成
+$\begin{bmatrix} 0 & B \\ B^\top & 0 \end{bmatrix}$，其中$B\in\R^{p\times q}$是全1矩阵。
+$A(K_{p,q})$的秩为2，所以0是它的$p+q-2$重根，此外还有两个非零特征值，分别记为$\alpha$和$\beta$。
+根据\cref{fact:trace}，$\Tr(A)=\alpha+\beta+0=0$，所以$\alpha=-\beta$（不妨设$\alpha>0$）。
+
+根据$A$的特征值，写出特征多项式$\det(xI-A)=(x-\alpha)(x+\alpha)x^{p+q-2}=x^{p+q}-\alpha^2x^{p+q-2}$。
+为了计算$\alpha$，需要确定$x^{p+q-2}$的系数。矩阵$xI-A$对角线上的元素都等于$x$，其余元素为0或者-1（如果$ij\in E$，则$(xI-A)_{i,j}=(xI-A)_{j,i}=-1$）。
+
+根据\cref{fact:det}对于行列式的定义，任何在求和中对$\deg(xI-A)$贡献了$x^{p+q-2}$的项，
+都是$n$个$xI-A$的元素相乘：其中有$p+q-2$个元素来自对角元（贡献$x^{p+q-2}$），剩下的两个元素为某条边对应的$-A_{ij}$和$-A_{ji}$（贡献$-1\cdot -1=1$）。
+图中一共有$p\cdot q$条边，所以行列式的求和中一共有$p\cdot q$个$x^{p+q-2}$的项（一条边对应一项）。
+由于这个置换只有一个逆序对（要么$\sigma(i)<\sigma(j)$要么$\sigma(j)<\sigma(i)$），所以的符号差是$-1$。
+所以$-\alpha^2x^{p+q-2}=-1\cdot pq\cdot x^{p+q-2}$，即$\alpha=\sqrt{pq}$。
+因此，完全二部图的邻接矩阵的特征值为$\{\sqrt{pq},0,\dots,0,-\sqrt{pq}\}$。
+
+\section{Perron--Frobenius 定理}
+
+Perron--Frobenius 定理是关于非负矩阵最大特征值及其对应特征向量的重要结果。为表述该定理，我们先给出不可约矩阵与谱半径的定义。
+
+\begin{definition}[不可约矩阵]\label{def:irreducible}
+设 $A\in \mathbb{R}^{n\times n}$. 若其对应的有向图 $G=(V,E)$ 强连通，则称 $A$ 是 \emph{不可约} 的。
+其中 $V=[n]$，且
+\[
+E=\{\, ij \mid A_{ij}\neq 0 \,\}.
+\]
+\end{definition}
+
+对实对称矩阵而言，其谱半径即为绝对值最大的特征值。对于一般可能有复特征值的矩阵，我们采用如下定义。
+
+\begin{definition}[谱半径]\label{def:spectral-radius}
+矩阵 $A$ 的谱半径 $\rho(A)$ 定义为其全部特征值的模的最大值，即
+\[
+\rho(A)=\max\{\, |\lambda| : \lambda \text{ 是 } A \text{ 的特征值} \,\}.
+\]
+\end{definition}
+
+Perron--Frobenius 定理在随机游走（random walk）的研究中尤其重要，
+参见文献 (Christopher D. Godsil and Gordon F. Royle. Algebraic Graph Theory 第 8.8 章) 和 (Roger A. Horn and Charles R. Johnson. Matrix Analysis. Cambridge University Press, Cambridge;
+New York, 2nd edition, 2013 第 8.4 章) 以了解更多细节和证明。
+
+\begin{theorem}[Perron--Frobenius 定理]\label{thm:PF}
+设 $A\in \mathbb{R}^{n\times n}$ 是非负且不可约矩阵，则有：
+\begin{enumerate}
+    \item 谱半径 $\rho(A)$ 是矩阵 $A$ 的一个特征值，且其代数重数为 $1$。
+    特别地，若 $A$ 还是实对称矩阵，则最大特征值的重数为 $1$，并且其绝对值最大。
+    \item 若 $v$ 是对应特征值 $\rho(A)$ 的特征向量，则 $v$ 的所有分量均非零，
+    且它们具有相同符号。
+\end{enumerate}
+\end{theorem}
